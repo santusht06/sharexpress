@@ -2,15 +2,19 @@ import uvicorn
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
-from routers.user_routes import router as User_router
 from starlette.middleware.sessions import SessionMiddleware
+
+#  ROUTERS YAHA DEFINE KARA HAI SARE KE SARE
+
+from routers.user_routes import router as User_router
+from routers.qr_routes import router as qr_router
+
+# END OF ROUTERS
 
 
 load_dotenv()
 
-
 origins = ["*"]
-
 
 app = FastAPI()
 
@@ -27,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(User_router)
+app.include_router(qr_router)
 
 
 @app.get("/health")

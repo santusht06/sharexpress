@@ -107,7 +107,12 @@ class UserController:
                     status_code=400, detail="ERROR OCCURED WHILE LOGGING VIA GOOGLE"
                 )
             redirect_uri = request.url_for("google_callback")
-            return await oauth.google.authorize_redirect(request, redirect_uri)
+            return await oauth.google.authorize_redirect(
+                request,
+                redirect_uri,
+                prompt="select_account consent",
+                access_type="offline",
+            )
 
         except HTTPException:
             raise
@@ -153,6 +158,22 @@ class UserController:
             GenerateToken(user["user_id"], response)
             return {"message": "Google login successful", "success": True}
 
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def Logout_user(response: Response, request: Request):
+        try:
+            token = request.cookies.get("user")
+
+            if not token:
+                raise HTTPException(status_code=404, detail="TOKEN NOT FOUND")
+
+            response.delete_cookie(key="user", httponly=True, samesite="lax")
+
+        except HTTPException:
+            raise
         except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")

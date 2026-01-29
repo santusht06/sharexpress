@@ -24,3 +24,8 @@ async def google_login(request: Request):
 @router.get("/google/callback", name="google_callback")
 async def google_callback_function(request: Request, response: Response):
     return await UserController.google_callback(request, response)
+
+
+@router.post("/logout")
+async def logout_user(response: Response, request: Request):
+    return await UserController.Logout_user(response, request)
