@@ -1,18 +1,25 @@
 from fastapi import APIRouter, Response, Request, Depends
 from models.user_model import User, OTPverify
 from controllers.user_controller import UserController
-from utils.JWT import check_auth_middleware
+from utils.JWT import check_auth_middleware, check_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/sendOTP")
-async def send_otp(user: User):
+async def send_otp(
+    user: User,
+    _: None = Depends(check_token),
+):
     return await UserController.SendOTP(user)
 
 
 @router.post("/verifyOTP")
-async def verify_otp(payload: OTPverify, response: Response):
+async def verify_otp(
+    payload: OTPverify,
+    response: Response,
+    _: None = Depends(check_token),
+):
     return await UserController.VerifyOTPControl(payload, response)
 
 

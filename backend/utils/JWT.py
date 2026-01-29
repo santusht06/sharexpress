@@ -143,3 +143,17 @@ def verify_token(token: str) -> Optional[dict]:
     except JWTError as e:
         print(f"Token verification failed: {e}")
         return None
+
+
+async def check_token(request: Request):
+    token = request.cookies.get("user")
+
+    if not token:
+        return
+
+    try:
+        jwt.decode(token, PUBLIC_KEY, algorithms=[JWT_ALGORITHM])
+        raise HTTPException(status_code=400, detail="You are already logged in")
+
+    except JWTError:
+        return
