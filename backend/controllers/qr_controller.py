@@ -21,6 +21,8 @@ class Qr_controller:
                 owner_id = current_user["user_id"]
                 expires_at = None
                 is_permanent = True
+                response.delete_cookie("session_id")
+
             else:
                 session = await get_or_create_guest_session(request, response)
                 owner_type = "session"

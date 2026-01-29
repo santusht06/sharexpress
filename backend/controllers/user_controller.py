@@ -8,6 +8,7 @@ from lib.generateOTP import generateOTP
 from utils.SEND_MAILS import send_otp_email
 from uuid import uuid4
 from utils.google_auth import oauth
+from fastapi.responses import RedirectResponse
 
 
 db = get_db()
@@ -121,7 +122,7 @@ class UserController:
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
 
     @staticmethod
-    async def google_callback(request: Request, response: Response):
+    async def google_callback(request: Request):
         try:
             token = await oauth.google.authorize_access_token(request)
             user_info = token.get("userinfo")
@@ -147,16 +148,21 @@ class UserController:
                         "updated_at": datetime.utcnow(),
                     }
                 )
-                GenerateToken(user_id, response)
-                return {"message": "User registered via Google", "success": True}
+            else:
+                user_id = user["user_id"]
+                if not user.get("google_sub"):
+                    await db.user.update_one(
+                        {"email": email}, {"$set": {"google_sub": google_sub}}
+                    )
 
-            if not user.get("google_sub"):
-                await db.user.update_one(
-                    {"email": email}, {"$set": {"google_sub": google_sub}}
-                )
+            response = RedirectResponse(
+                url="http://localhost:5173/login/success",
+                status_code=302,
+            )
 
-            GenerateToken(user["user_id"], response)
-            return {"message": "Google login successful", "success": True}
+            GenerateToken(user_id, response)
+
+            return response
 
         except Exception as e:
             print(e)
@@ -177,3 +183,7 @@ class UserController:
         except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def fetch_user(user: dict):
+        return {"success": True, "user": user}

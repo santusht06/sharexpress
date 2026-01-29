@@ -5,6 +5,14 @@ from fastapi_mail import ConnectionConfig
 load_dotenv()
 
 
+# JWT
+
+
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+JWT_EXPIRES = int(os.getenv("JWT_EXPIRES", 7))
+
+
 # DATABASE
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME")

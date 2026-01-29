@@ -7,15 +7,20 @@ from typing import Optional
 from uuid import UUID
 from utils.user_repo import get_user_by_id
 from fastapi import HTTPException
+from core.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRES
+from core.database import get_db
+
+
+db = get_db()
 
 
 PRIVATE_KEY = Path("private.pem").read_text()
 PUBLIC_KEY = Path("public.pem").read_text()
 
 
-JWT_SECRET = os.getenv("JWT_SECRET")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
-JWT_EXPIRES = int(os.getenv("JWT_EXPIRES", 7))
+JWT_SECRET = JWT_SECRET
+JWT_ALGORITHM = JWT_ALGORITHM
+JWT_EXPIRES = JWT_EXPIRES
 
 
 def GenerateToken(user_id: str, response: Response) -> str:
@@ -69,3 +74,33 @@ async def get_current_user_optional(request: Request):
 
     except JWTError:
         return None
+
+
+async def check_auth_middleware(request: Request):
+    try:
+        token = request.cookies.get("user")
+
+        if not token:
+            raise HTTPException(status_code=403, detail="FORBIDDEN")
+
+        payload = jwt.decode(
+            token,
+            PUBLIC_KEY,
+            algorithms=[JWT_ALGORITHM],
+        )
+
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=403, detail="INVALID TOKEN")
+
+        user = await db.user.find_one(
+            {"user_id": user_id, "deleted_at": None}, {"_id": 0}
+        )
+
+        if not user:
+            raise HTTPException(status_code=404, detail="USER NOT FOUND")
+
+        return user
+
+    except JWTError:
+        raise HTTPException(status_code=403, detail="INVALID TOKEN")
