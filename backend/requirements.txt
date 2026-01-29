@@ -1,0 +1,46 @@
+# =========================
+# Core Framework
+# =========================
+fastapi
+uvicorn
+
+# =========================
+# Environment Variables
+# =========================
+python-dotenv
+
+# =========================
+# Database (MongoDB)
+# =========================
+motor
+pymongo
+
+# =========================
+# Validation / Schemas
+# =========================
+pydantic
+pydantic-settings
+email-validator
+
+# =========================
+# Authentication & Security
+# =========================
+python-jose
+cryptography
+itsdangerous
+
+# =========================
+# OAuth (Google)
+# =========================
+authlib
+httpx
+
+# =========================
+# Mail (OTP Emails)
+# =========================
+fastapi-mail
+
+# =========================
+# Utilities
+# =========================
+python-multipart
