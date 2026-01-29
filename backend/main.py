@@ -1,43 +1,83 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-
-#  ROUTERS YAHA DEFINE KARA HAI SARE KE SARE
+import os
 
 from routers.user_routes import router as User_router
 from routers.qr_routes import router as qr_router
 
-# END OF ROUTERS
-
-
 load_dotenv()
 
-origins = ["*"]
+app = FastAPI(
+    title="QR Authentication API",
+    description="API for user authentication and QR code management",
+    version="1.0.0",
+)
 
-app = FastAPI()
-
-
-app.add_middleware(SessionMiddleware, secret_key="SUPER_SECRET_RANDOM_STRING")
-
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "DEV_SECRET_CHANGE_IN_PRODUCTION"),
+    same_site="lax",
+    https_only=False,
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all unhandled exceptions"""
+    print(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "success": False},
+    )
+
 
 app.include_router(User_router)
 app.include_router(qr_router)
 
 
-@app.get("/health")
-async def health():
-    return {"PASSED": True}
+@app.get("/health", tags=["Health"])
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "success": True,
+        "message": "API is running",
+    }
+
+
+@app.get("/", tags=["Root"])
+async def root():
+    """Root endpoint with API information"""
+    return {
+        "message": "QR Authentication API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+    )

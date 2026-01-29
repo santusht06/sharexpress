@@ -15,7 +15,7 @@ async def sendOTP(email: str, OTP: str):
 
         Redis_client.setex(
             f"otp:{transactionID}",
-            300,  # 5 minutes expiry
+            300,
             json.dumps({"email": email, "hashedOTP": hashOTP(str(OTP)), "attempts": 0}),
         )
 

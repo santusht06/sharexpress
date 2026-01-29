@@ -9,6 +9,7 @@ from utils.SEND_MAILS import send_otp_email
 from uuid import uuid4
 from utils.google_auth import oauth
 from fastapi.responses import RedirectResponse
+from authlib.integrations.base_client.errors import OAuthError
 
 
 db = get_db()
@@ -17,97 +18,123 @@ db = get_db()
 class UserController:
     @staticmethod
     async def SendOTP(user: User):
+        """Send OTP to user's email for authentication"""
         try:
-            print(user.email)
-            if user.email is None:
-                raise HTTPException(status_code=404, detail="EMAIL NOT FOUND")
+            if not user.email:
+                raise HTTPException(status_code=400, detail="Email is required")
 
-            OTP = generateOTP()
+            otp_code = generateOTP()
 
-            validateOTP = await sendOTP(user.email, OTP)
+            validate_otp = await sendOTP(user.email, otp_code)
 
-            if not validateOTP.get("success"):
+            if not validate_otp.get("success"):
                 raise HTTPException(
-                    status_code=400, detail="SOMETHING WENT WRONG TO GENERATE OTP"
+                    status_code=400, detail="Failed to generate OTP. Please try again."
                 )
 
-            TRANSACTIONID = validateOTP.get("transactionID")
-            sendMail = await send_otp_email(user.email, OTP)
+            transaction_id = validate_otp.get("transactionID")
 
-            sendMail = True
-            if sendMail is False:
-                raise HTTPException(status_code=400, detail="ERROR IN SENDING MAIL")
+            send_mail = await send_otp_email(user.email, otp_code)
+            if not send_mail:
+                raise HTTPException(status_code=400, detail="Failed to send email")
 
             return {
-                "message": f"OTP HAS BEEN SENT SUCCESSFULLY TO {user.email} ",
+                "message": f"OTP has been sent successfully to {user.email}",
                 "success": True,
-                "TRANSACTIONID": TRANSACTIONID,
+                "transactionID": transaction_id,
             }
 
         except HTTPException:
             raise
-
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERRROR")
+            print(f"Error in SendOTP: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
     async def VerifyOTPControl(payload: OTP, response: Response):
+        """Verify OTP and create/login user"""
         try:
             verify_result = await VerifyOTPbyUtils(payload.transactionID, payload.OTP)
 
-            if verify_result.get("valid") is not True:
+            if not verify_result.get("valid"):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"OTP verification failed: {verify_result.get('reason')}",
+                    detail=f"OTP verification failed: {verify_result.get('reason', 'Invalid OTP')}",
                 )
 
-            userEmail = verify_result["email"]
-            userexists = await db.user.find_one({"email": userEmail})
+            user_email = verify_result.get("email")
+            if not user_email:
+                raise HTTPException(
+                    status_code=400, detail="Email not found in verification result"
+                )
 
-            if not userexists:
+            user_exists = await db.user.find_one({"email": user_email})
+
+            if not user_exists:
                 user_id = str(uuid4())
 
                 await db.user.insert_one(
                     {
                         "user_id": user_id,
-                        "email": userEmail,
-                        "is_verified": True,
+                        "email": user_email,
                         "auth_provider": "OTP",
+                        "is_verified": True,
+                        "is_active": True,
+                        "is_locked": False,
+                        "google_sub": None,
                         "created_at": datetime.utcnow(),
                         "updated_at": datetime.utcnow(),
+                        "deleted_at": None,
                     }
                 )
 
                 GenerateToken(user_id, response)
-                return {"message": "User created and verified", "success": True}
+                return {
+                    "message": "User created and verified successfully",
+                    "success": True,
+                }
 
-            if not userexists.get("is_verified"):
+            if not user_exists.get("is_verified"):
                 await db.user.update_one(
-                    {"email": userEmail},
-                    {"$set": {"is_verified": True, "updated_at": datetime.utcnow()}},
+                    {"email": user_email},
+                    {
+                        "$set": {
+                            "is_verified": True,
+                            "is_active": True,
+                            "auth_provider": "OTP",
+                            "updated_at": datetime.utcnow(),
+                        }
+                    },
                 )
 
-            GenerateToken(userexists["user_id"], response)
+            if user_exists.get("is_locked"):
+                raise HTTPException(
+                    status_code=403, detail="Account is locked. Please contact support."
+                )
+
+            if not user_exists.get("is_active", True):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Account is inactive. Please contact support.",
+                )
+
+            GenerateToken(user_exists["user_id"], response)
             return {"message": "Login successful", "success": True}
 
         except HTTPException:
             raise
         except Exception as e:
+            print(f"Error in VerifyOTPControl: {e}")
             raise HTTPException(
-                status_code=500, detail=f"INTERNAL SERVER ERROR: {str(e)}"
+                status_code=500, detail=f"Internal server error: {str(e)}"
             )
 
     @staticmethod
     async def redirect_to_uri(request: Request):
+        """Redirect user to Google OAuth consent screen"""
         try:
             redirect_uri = request.url_for("google_callback")
 
-            if redirect_uri is None:
-                raise HTTPException(
-                    status_code=400, detail="ERROR OCCURED WHILE LOGGING VIA GOOGLE"
-                )
-            redirect_uri = request.url_for("google_callback")
             return await oauth.google.authorize_redirect(
                 request,
                 redirect_uri,
@@ -118,20 +145,32 @@ class UserController:
         except HTTPException:
             raise
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+            print(f"Error in redirect_to_uri: {e}")
+            raise HTTPException(
+                status_code=500, detail="Failed to initiate Google login"
+            )
 
     @staticmethod
-    async def google_callback(request: Request):
+    async def google_callback(request: Request, response: Response):
+        """Handle Google OAuth callback and create/login user"""
         try:
             token = await oauth.google.authorize_access_token(request)
+
             user_info = token.get("userinfo")
 
             if not user_info:
-                raise Exception("Google auth failed")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Failed to retrieve user information from Google",
+                )
 
-            email = user_info["email"]
-            google_sub = user_info["sub"]
+            email = user_info.get("email")
+            google_sub = user_info.get("sub")
+
+            if not email or not google_sub:
+                raise HTTPException(
+                    status_code=400, detail="Invalid user information from Google"
+                )
 
             user = await db.user.find_one({"email": email})
 
@@ -144,46 +183,91 @@ class UserController:
                         "google_sub": google_sub,
                         "auth_provider": "GOOGLE",
                         "is_verified": True,
+                        "is_active": True,
+                        "is_locked": False,
                         "created_at": datetime.utcnow(),
                         "updated_at": datetime.utcnow(),
+                        "deleted_at": None,
                     }
                 )
             else:
                 user_id = user["user_id"]
-                if not user.get("google_sub"):
-                    await db.user.update_one(
-                        {"email": email}, {"$set": {"google_sub": google_sub}}
+
+                if user.get("is_locked"):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Account is locked. Please contact support.",
                     )
 
-            response = RedirectResponse(
-                url="http://localhost:5173/login/success",
-                status_code=302,
-            )
+                if not user.get("is_active", True):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Account is inactive. Please contact support.",
+                    )
+
+                if not user.get("google_sub"):
+                    await db.user.update_one(
+                        {"email": email},
+                        {
+                            "$set": {
+                                "google_sub": google_sub,
+                                "is_verified": True,
+                                "updated_at": datetime.utcnow(),
+                            }
+                        },
+                    )
 
             GenerateToken(user_id, response)
 
-            return response
+            # return RedirectResponse(url=f"{request.base_url}auth/success")
+            return {"success": True, "message": "GOOGLE AUTHENTICATION SUCCESS"}
 
+        except OAuthError as e:
+            print(f"OAuth error: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail="Google login failed or expired. Please try again.",
+            )
+        except HTTPException:
+            raise
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+            print(f"Error in google_callback: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
     async def Logout_user(response: Response, request: Request):
+        """Logout user by clearing authentication cookie"""
         try:
             token = request.cookies.get("user")
 
             if not token:
-                raise HTTPException(status_code=404, detail="TOKEN NOT FOUND")
+                raise HTTPException(status_code=401, detail="Not authenticated")
 
-            response.delete_cookie(key="user", httponly=True, samesite="lax")
+            response.delete_cookie(
+                key="user",
+                httponly=True,
+                samesite="lax",
+                secure=False,
+            )
+
+            return {"message": "Logged out successfully", "success": True}
 
         except HTTPException:
             raise
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+            print(f"Error in Logout_user: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
     async def fetch_user(user: dict):
-        return {"success": True, "user": user}
+        """Return current authenticated user information"""
+        safe_user = {
+            "user_id": user.get("user_id"),
+            "email": user.get("email"),
+            "auth_provider": user.get("auth_provider"),
+            "is_verified": user.get("is_verified"),
+            "is_active": user.get("is_active"),
+            "created_at": user.get("created_at"),
+        }
+
+        return {"success": True, "user": safe_user}
