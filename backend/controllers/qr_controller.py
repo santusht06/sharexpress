@@ -87,21 +87,32 @@ class Qr_controller:
     @staticmethod
     async def verify_QR(qr_token: str):
         try:
-            qr_code = await db.qr_codes.find_one({"qr_token": qr_token})
+            if not qr_token:
+                raise HTTPException(status_code=400, detail="QR token is required")
+
+            qr_code = await db.qr_codes.find_one(
+                {"qr_token": qr_token},
+                {"_id": 0},
+            )
 
             if not qr_code:
                 raise HTTPException(status_code=404, detail="QR code not found")
 
-            if not qr_code.get("is_active"):
-                raise HTTPException(status_code=400, detail="QR code is not active")
+            if not qr_code.get("is_active", False):
+                raise HTTPException(status_code=400, detail="QR code is inactive")
 
-            if qr_code.get("expires_at"):
-                if datetime.utcnow() > qr_code["expires_at"]:
-                    # Deactivate expired QR code
-                    await db.qr_codes.update_one(
-                        {"qr_token": qr_token}, {"$set": {"is_active": False}}
-                    )
-                    raise HTTPException(status_code=400, detail="QR code has expired")
+            expires_at = qr_code.get("expires_at")
+            if expires_at and datetime.utcnow() > expires_at:
+                await db.qr_codes.update_one(
+                    {"qr_token": qr_token},
+                    {
+                        "$set": {
+                            "is_active": False,
+                            "revoked_at": datetime.utcnow(),
+                        }
+                    },
+                )
+                raise HTTPException(status_code=400, detail="QR code has expired")
 
             return {
                 "success": True,
@@ -109,13 +120,14 @@ class Qr_controller:
                 "owner_type": qr_code["owner_type"],
                 "owner_id": qr_code["owner_id"],
                 "is_permanent": qr_code["is_permanent"],
+                "expires_at": qr_code.get("expires_at"),
             }
 
         except HTTPException:
             raise
         except Exception as e:
-            print(f"Error in verify_QR: {e}")
-            raise HTTPException(status_code=500, detail="Failed to verify QR code")
+            print("verify_QR error:", e)
+            raise HTTPException(status_code=500, detail="Failed to verify QR")
 
     @staticmethod
     async def deactivate_QR(qr_token: str, user_id: str = None):
