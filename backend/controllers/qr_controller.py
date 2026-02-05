@@ -9,7 +9,7 @@ import hashlib
 import secrets
 from typing import Optional
 from pymongo import ReturnDocument
-
+from utils.random_name_for_guest import get_random_names
 
 db = get_db()
 
@@ -425,19 +425,17 @@ class Qr_controller:
                         details={"mode": "user", "is_own_qr": is_own_qr},
                     )
 
+                    owner_details = {
+                        "user_id": owner["user_id"],
+                        "email": owner["email"] if not is_own_qr else None,
+                    }
+
                     return {
                         "success": True,
                         "mode": "user",
                         "qr_id": qr_data["qr_id"],
                         "is_own_qr": is_own_qr,
-                        "owner_info": {
-                            "user_id": owner["user_id"],
-                            "email": owner["email"]
-                            if not is_own_qr
-                            else None,  # Privacy: don't show own email
-                        }
-                        if not is_own_qr
-                        else None,
+                        "owner_info": owner_details,
                         "security": qr_data.get("security", {}),
                     }
                 else:
@@ -510,7 +508,6 @@ class Qr_controller:
                         detail="Not authorized to deactivate this QR code",
                     )
 
-            # Deactivate with reason
             await db.qr_codes.update_one(
                 {"qr_token": qr_token},
                 {

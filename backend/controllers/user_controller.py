@@ -165,6 +165,7 @@ class UserController:
 
             email = user_info.get("email")
             google_sub = user_info.get("sub")
+            name = user_info.get("name")
 
             if not email or not google_sub:
                 raise HTTPException(
@@ -177,6 +178,7 @@ class UserController:
                 user_id = str(uuid4())
                 await db.user.insert_one(
                     {
+                        "name": name,
                         "user_id": user_id,
                         "email": email,
                         "google_sub": google_sub,

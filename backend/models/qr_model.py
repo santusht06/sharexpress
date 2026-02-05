@@ -20,3 +20,7 @@ class QRCode(BaseModel):
     revoked_at: Optional[datetime] = None
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class QRVerifyRequest(BaseModel):
+    qr_token: str
