@@ -5,6 +5,10 @@ from utils.JWT import get_current_user_optional
 from models.qr_model import QRVerifyRequest
 from utils.mongo_format_ import serialize_mongo
 from enum import Enum
+import secrets
+from pymongo import ReturnDocument
+from datetime import datetime
+
 from typing import Dict
 
 db = get_db()
@@ -25,13 +29,18 @@ class SharingController:
         current_user = await get_current_user_optional(request)
 
         if current_user:
-            # Authenticated user
             sender_type = ParticipantsType.USER.value
             sender_id = current_user["user_id"]
+            sender_name = current_user["name"]
+
         else:
             # Guest session
             sender_type = ParticipantsType.SESSION.value
             session_id = request.cookies.get("guest_session")
+
+            name = await db.guest_sessions.find_one({"session_id": session_id})
+
+            sender_name = name["guest_name"]
 
             if not session_id:
                 raise HTTPException(
@@ -40,10 +49,7 @@ class SharingController:
 
             sender_id = session_id
 
-        return (
-            sender_type,
-            sender_id,
-        )
+        return (sender_type, sender_id, sender_name)
 
     @staticmethod
     async def get_reciever_details_by_token(qr_token: QRVerifyRequest):
@@ -59,93 +65,102 @@ class SharingController:
         if owner_type == ParticipantsType.SESSION.value:
             reciever_type = ParticipantsType.SESSION.value
             reciever_id = reciever_details["owner_id"]
+            reciever_name = reciever_details["owner_name"]
 
         elif owner_type == ParticipantsType.USER.value:
             reciever_type = ParticipantsType.USER.value
             reciever_id = reciever_details["owner_id"]
+            reciever_name = reciever_details["owner_name"]
 
         else:
             raise HTTPException(status_code=400, detail="OWNER TYPE MUST BE DEFINED")
 
-        return (
-            reciever_type,
-            reciever_id,
-        )
+        return (reciever_type, reciever_id, reciever_name)
 
     @staticmethod
     async def create_session(req: Request, qr_token: QRVerifyRequest):
         try:
-            print(qr_token.qr_token)
-
             (
                 sender_type,
                 sender_id,
+                sender_name,
             ) = await SharingController.get_sender_info(req)
 
-            sender_user_details = {
-                "sender_type": sender_type,
-                "sender_id": sender_id,
-            }
-
-            print("SENDER DETAILS = ", sender_user_details["sender_type"])
+            print("sender name = ", sender_name)
 
             (
-                reciever_type,
-                reciever_id,
+                receiver_type,
+                receiver_id,
+                reciever_name,
             ) = await SharingController.get_reciever_details_by_token(qr_token)
 
-            reciever_QR_scanned_details = {
-                "reciever_type": reciever_type,
-                "reciever_id": reciever_id,
-            }
+            # Generate a NEW sharing token (rotation)
+            new_sharing_token = secrets.token_urlsafe(48)
 
-            check_existing_session = await db.sharing_session.find_one(
+            # Try to UPDATE existing active session (token rotation)
+            existing_session = await db.sharing_session.find_one_and_update(
                 {
                     "qr_token": qr_token.qr_token,
-                    "sender_type": sender_user_details["sender_type"],
-                    "sender_ID": sender_user_details["sender_id"],
-                    "receiver_ID": reciever_QR_scanned_details["reciever_id"],
-                    "receiver_type": reciever_QR_scanned_details["reciever_type"],
+                    "sender_type": sender_type,
+                    "sender_ID": sender_id,
+                    "sender_name": sender_name,
+                    "receiver_ID": receiver_id,
+                    "receiver_type": receiver_type,
+                    "reciever_name": reciever_name,
                     "is_active": True,
                     "status": Status.ACTIVE,
-                }
+                },
+                {
+                    "$set": {
+                        "sharing_token": new_sharing_token,
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+                return_document=ReturnDocument.AFTER,
             )
 
-            if check_existing_session:
-                raise HTTPException(status_code=400, detail="SESSION ALREADY CREATED")
+            if existing_session:
+                # ✅ Session existed → token rotated
+                return {
+                    "success": True,
+                    "mode": "rotated",
+                    "sharing_token": new_sharing_token,
+                    "session_id": existing_session["sharing_session_ID"],
+                    "sender_name": sender_name,
+                    "sender_type": sender_type,
+                    "sender_ID": sender_id,
+                    "receiver_ID": receiver_id,
+                    "receiver_type": receiver_type,
+                    "reciever_name": reciever_name,
+                }
 
+            # ❌ No active session → create new
             session_data = SharingSession(
                 qr_token=qr_token.qr_token,
-                sender_ID=sender_user_details["sender_id"],
-                sender_type=ParticipantsType(sender_user_details["sender_type"]),
-                receiver_ID=reciever_QR_scanned_details["reciever_id"],
-                receiver_type=ParticipantsType(
-                    reciever_QR_scanned_details["reciever_type"]
-                ),
+                sharing_token=new_sharing_token,
+                sender_ID=sender_id,
+                sender_type=ParticipantsType(sender_type),
+                sender_name=sender_name,
+                receiver_ID=receiver_id,
+                receiver_type=ParticipantsType(receiver_type),
+                reciever_name=reciever_name,
                 status=Status.ACTIVE,
                 is_active=True,
             )
 
-            session_dict = session_data.dict()
-
-            insert_session = await db.sharing_session.insert_one(session_dict)
-
-            if not insert_session.inserted_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="ERROR OCCURED WHILE INSERTING DATA IN DATABASE",
-                )
-
-            print(insert_session)
+            insert_session = await db.sharing_session.insert_one(
+                session_data.model_dump()
+            )
 
             return {
-                "qr_token": qr_token.qr_token,
-                "sender_type": serialize_mongo(sender_user_details),
-                "receiver_user_details": serialize_mongo(reciever_QR_scanned_details),
+                "success": True,
+                "mode": "created",
+                "sharing_token": new_sharing_token,
+                "session_id": session_data.sharing_session_ID,
             }
 
         except HTTPException:
             raise
         except Exception as e:
-            print(e)
+            print("create_session error:", e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")

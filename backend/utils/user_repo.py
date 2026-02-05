@@ -2,6 +2,7 @@ from core.database import get_db
 from fastapi import Request, Response
 from datetime import datetime, timedelta
 from uuid import uuid4
+from utils.random_name_for_guest import get_random_names
 
 db = get_db()
 
@@ -33,26 +34,29 @@ async def get_or_create_guest_session(request: Request, response: Response):
         if session_id:
             session = await db.guest_sessions.find_one({"session_id": session_id})
 
-            if session:
-                if session.get("expires_at") > datetime.utcnow():
-                    new_expiry = datetime.utcnow() + timedelta(hours=24)
-                    await db.guest_sessions.update_one(
-                        {"session_id": session_id},
-                        {
-                            "$set": {
-                                "expires_at": new_expiry,
-                                "updated_at": datetime.utcnow(),
-                            }
-                        },
-                    )
-                    session["expires_at"] = new_expiry
-                    return session
+            if session and session["expires_at"] > datetime.utcnow():
+                new_expiry = datetime.utcnow() + timedelta(hours=24)
+
+                await db.guest_sessions.update_one(
+                    {"session_id": session_id},
+                    {
+                        "$set": {
+                            "expires_at": new_expiry,
+                            "updated_at": datetime.utcnow(),
+                        }
+                    },
+                )
+
+                session["expires_at"] = new_expiry
+                return session
 
         session_id = str(uuid4())
+        guest_name = get_random_names()
         expires_at = datetime.utcnow() + timedelta(hours=24)
 
         session_data = {
             "session_id": session_id,
+            "guest_name": guest_name,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "expires_at": expires_at,
@@ -72,8 +76,9 @@ async def get_or_create_guest_session(request: Request, response: Response):
         return session_data
 
     except Exception as e:
-        print(f"Error in get_or_create_guest_session: {e}")
         session_id = str(uuid4())
+        guest_name = get_random_names()
+
         response.set_cookie(
             key="guest_session",
             value=session_id,
@@ -82,8 +87,10 @@ async def get_or_create_guest_session(request: Request, response: Response):
             samesite="lax",
             max_age=24 * 60 * 60,
         )
+
         return {
             "session_id": session_id,
+            "guest_name": guest_name,
             "created_at": datetime.utcnow(),
             "expires_at": datetime.utcnow() + timedelta(hours=24),
         }

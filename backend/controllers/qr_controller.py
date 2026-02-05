@@ -87,6 +87,7 @@ class Qr_controller:
             client_info = Qr_controller._get_client_info(request)
 
             if current_user:
+                owner_name = current_user["name"]
                 owner_type = "user"
                 owner_id = current_user["user_id"]
                 is_permanent = True
@@ -122,6 +123,7 @@ class Qr_controller:
             else:
                 # Guest session
                 session = await get_or_create_guest_session(request, response)
+                owner_name = session["guest_name"]
                 owner_type = "session"
                 owner_id = session["session_id"]
                 is_permanent = False
@@ -146,6 +148,7 @@ class Qr_controller:
                     verification_secret.encode()
                 ).hexdigest(),
                 "owner_type": owner_type,
+                "owner_name": owner_name,
                 "owner_id": owner_id,
                 "is_permanent": is_permanent,
                 "is_active": True,
@@ -185,6 +188,7 @@ class Qr_controller:
                 "success": True,
                 "qr_id": qr_id,
                 "qr_token": qr_token,
+                "owner_name": owner_name,
                 "verification_secret": verification_secret,  # Return only once
                 "owner_type": owner_type,
                 "is_permanent": is_permanent,
