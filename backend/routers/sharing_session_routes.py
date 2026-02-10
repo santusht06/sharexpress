@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
-from fastapi import APIRouter, Request, Body
+from fastapi import APIRouter, Request, Body, Response
 from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
 
@@ -18,5 +18,9 @@ router = APIRouter(prefix="/share", tags=["share"])
 
 
 @router.post("/create")
-async def create_session(req: Request, qr_token: QRVerifyRequest = Body(...)):
-    return await SharingController.create_session(req, qr_token)
+async def create_session(
+    req: Request,
+    response: Response,
+    qr_token: QRVerifyRequest = Body(...),
+):
+    return await SharingController.create_session(req, qr_token, response)

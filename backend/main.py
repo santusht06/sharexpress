@@ -10,6 +10,9 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
+
+
+# SOURCE FILE STARTS FROM HERE
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -19,18 +22,29 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 from contextlib import asynccontextmanager
 
+
+# ROUTERS IMPORTS
+
+
 from routers.sharing_session_routes import router as Sharing_session_router
 from routers.user_routes import router as User_router
 from routers.qr_routes import router as qr_router
 
+#  ENV FILE FUNCTION LOADS
+
+
 load_dotenv()
 
+
+#  APP CONFIGURED
 
 app = FastAPI(
     title="QR Authentication API",
     description="API for user authentication and QR code management",
     version="1.0.0",
 )
+
+# ALL MIDDLEWARES CONFIGURES FROM HERE
 
 app.add_middleware(
     SessionMiddleware,
@@ -51,6 +65,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# MIDDLEWARE CONFIGURED ENDED
 
 
 @app.exception_handler(Exception)

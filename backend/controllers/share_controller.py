@@ -20,7 +20,7 @@ from enum import Enum
 import secrets
 from pymongo import ReturnDocument
 from datetime import datetime
-
+from utils.JWT import set_sharing_cookie
 from typing import Dict
 
 db = get_db()
@@ -90,7 +90,9 @@ class SharingController:
         return (reciever_type, reciever_id, reciever_name)
 
     @staticmethod
-    async def create_session(req: Request, qr_token: QRVerifyRequest):
+    async def create_session(
+        req: Request, qr_token: QRVerifyRequest, response: Response
+    ):
         try:
             (
                 sender_type,
@@ -109,6 +111,7 @@ class SharingController:
             # Generate a NEW sharing token (rotation)
             new_sharing_token = secrets.token_urlsafe(48)
 
+            set_sharing_cookie(new_sharing_token, response)
             # Try to UPDATE existing active session (token rotation)
             existing_session = await db.sharing_session.find_one_and_update(
                 {

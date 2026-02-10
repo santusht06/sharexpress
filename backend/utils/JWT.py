@@ -169,3 +169,24 @@ async def check_token(request: Request):
 
     except JWTError:
         return
+
+
+def set_sharing_cookie(sharing_token: str, response: Response) -> None:
+    payload = {
+        "sub": sharing_token,
+        "type": "sharing",
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(minutes=30),  # short lived
+    }
+
+    token = jwt.encode(payload, PRIVATE_KEY, algorithm=JWT_ALGORITHM)
+
+    response.set_cookie(
+        key="x-sharing-token",
+        value=token,
+        httponly=True,
+        secure=False,  # True in prod
+        samesite="lax",
+        max_age=30 * 60,
+        path="/",
+    )
