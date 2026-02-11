@@ -38,3 +38,30 @@ def get_random_names():
     ]
 
     return f"guest_{random.choice(animals)}_{random.randint(10, 99)}"
+
+
+def get_random_names_for_users():
+    animals = [
+        "falcon",
+        "panther",
+        "wolf",
+        "lynx",
+        "eagle",
+        "fox",
+        "tiger",
+        "raven",
+        "otter",
+        "leopard",
+        "hawk",
+        "bear",
+        "stag",
+        "cobra",
+        "owl",
+        "jaguar",
+        "bison",
+        "viper",
+        "kraken",
+        "orca",
+    ]
+
+    return f"User_{random.choice(animals)}_{random.randint(10, 99)}"

@@ -10,17 +10,25 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
 
-MONGO_URI = os.getenv("MONGO_URI")
+from core.database import get_db
 
-client = AsyncIOMotorClient(MONGO_URI)
-db = client.get_default_database()
+db = get_db()
 
 
 async def create_indexes():
     # share_sessions indexes
+
+    await db.sharing_session.create_index(
+        [
+            ("qr_token", 1),
+            ("sender_ID", 1),
+            ("receiver_ID", 1),
+        ],
+        unique=True,
+        name="unique_share_relationship",
+    )
+
     await db.share_sessions.create_index("session_id", unique=True)
     await db.share_sessions.create_index("sender_id")
     await db.share_sessions.create_index("receiver_id")

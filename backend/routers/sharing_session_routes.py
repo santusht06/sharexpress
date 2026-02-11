@@ -13,7 +13,7 @@
 from fastapi import APIRouter, Request, Body, Response, Depends
 from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
-from utils.JWT import verify_x_sharing_token
+from middlewares.sharing_token_middleware import verify_x_sharing_token
 
 router = APIRouter(prefix="/share", tags=["share"])
 

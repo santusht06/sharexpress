@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 import os
 from contextlib import asynccontextmanager
-
+from core.indexes import create_indexes
 
 # ROUTERS IMPORTS
 
@@ -36,12 +36,19 @@ from routers.qr_routes import router as qr_router
 load_dotenv()
 
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     await create_indexes()
+#     yield
+
+
 #  APP CONFIGURED
 
 app = FastAPI(
     title="QR Authentication API",
     description="API for user authentication and QR code management",
     version="1.0.0",
+    # lifespan=lifespan,
 )
 
 # ALL MIDDLEWARES CONFIGURES FROM HERE
@@ -79,9 +86,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+# ROUTERS INCLUDED HERE
+
+
 app.include_router(User_router)
 app.include_router(qr_router)
 app.include_router(Sharing_session_router)
+
+
+# HEALTH CHECKED API
 
 
 @app.get("/health", tags=["Health"])

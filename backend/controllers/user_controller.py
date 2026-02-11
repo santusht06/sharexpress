@@ -22,6 +22,7 @@ from uuid import uuid4
 from utils.google_auth import oauth
 from fastapi.responses import RedirectResponse
 from authlib.integrations.base_client.errors import OAuthError
+from utils.random_name_for_guest import get_random_names_for_users
 
 
 db = get_db()
@@ -45,9 +46,9 @@ class UserController:
 
             transaction_id = validate_otp.get("transactionID")
 
-            send_mail = await send_otp_email(user.email, otp_code)
-            if not send_mail:
-                raise HTTPException(status_code=400, detail="Failed to send email")
+            # send_mail = await send_otp_email(user.email, otp_code)
+            # if not send_mail:
+            #     raise HTTPException(status_code=400, detail="Failed to send email")
 
             return {
                 "message": f"OTP has been sent successfully to {user.email}",
@@ -83,9 +84,11 @@ class UserController:
 
             if not user_exists:
                 user_id = str(uuid4())
+                name = get_random_names_for_users()
 
                 await db.user.insert_one(
                     {
+                        "name": name,
                         "user_id": user_id,
                         "email": user_email,
                         "auth_provider": "OTP",

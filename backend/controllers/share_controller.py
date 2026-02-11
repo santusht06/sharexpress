@@ -95,6 +95,7 @@ class SharingController:
     async def create_session(
         req: Request, qr_token: QRVerifyRequest, response: Response
     ):
+
         try:
             (
                 sender_type,
@@ -124,12 +125,16 @@ class SharingController:
                     "receiver_ID": receiver_id,
                     "receiver_type": receiver_type,
                     "reciever_name": reciever_name,
-                    "is_active": True,
-                    "status": Status.ACTIVE,
                 },
                 {
                     "$set": {
                         "sharing_token": new_sharing_token,
+                        "sender_type": sender_type,
+                        "receiver_type": receiver_type,
+                        "sender_name": sender_name,
+                        "reciever_name": reciever_name,
+                        "is_active": True,
+                        "status": Status.ACTIVE,
                         "updated_at": datetime.utcnow(),
                     }
                 },
@@ -173,7 +178,13 @@ class SharingController:
                 "success": True,
                 "mode": "created",
                 "sharing_token": new_sharing_token,
-                "session_id": session_data.sharing_session_ID,
+                "session_id": existing_session["sharing_session_ID"],
+                "sender_name": sender_name,
+                "sender_type": sender_type,
+                "sender_ID": sender_id,
+                "receiver_ID": receiver_id,
+                "receiver_type": receiver_type,
+                "reciever_name": reciever_name,
             }
 
         except HTTPException:
