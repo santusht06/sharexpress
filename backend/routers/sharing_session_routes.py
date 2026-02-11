@@ -10,9 +10,10 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
-from fastapi import APIRouter, Request, Body, Response
+from fastapi import APIRouter, Request, Body, Response, Depends
 from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
+from utils.JWT import verify_x_sharing_token
 
 router = APIRouter(prefix="/share", tags=["share"])
 
@@ -24,3 +25,8 @@ async def create_session(
     qr_token: QRVerifyRequest = Body(...),
 ):
     return await SharingController.create_session(req, qr_token, response)
+
+
+@router.delete("/revoke")
+async def revoke_session(res: Response, session=Depends(verify_x_sharing_token)):
+    return await SharingController.terminate_session(session, res)

@@ -13,6 +13,7 @@
 import os
 from dotenv import load_dotenv
 from fastapi_mail import ConnectionConfig
+from pathlib import Path
 
 load_dotenv()
 
@@ -23,7 +24,8 @@ load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 JWT_EXPIRES = int(os.getenv("JWT_EXPIRES", 7))
-
+PRIVATE_KEY = Path("private.pem").read_text()
+PUBLIC_KEY = Path("public.pem").read_text()
 
 # DATABASE
 MONGO_URI = os.getenv("MONGO_URI")

@@ -22,6 +22,8 @@ from pymongo import ReturnDocument
 from datetime import datetime
 from utils.JWT import set_sharing_cookie
 from typing import Dict
+from jose import jwt, JWTError
+from core.config import JWT_ALGORITHM, JWT_SECRET, PUBLIC_KEY
 
 db = get_db()
 
@@ -181,19 +183,38 @@ class SharingController:
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
 
     @staticmethod
-    async def terminate_session(req: Request, res: Response):
+    async def terminate_session(sesson, res: Response):
         try:
+            sharing_token = sesson["sharing_token"]
+
+            await db.sharing_session.update_one(
+                {
+                    "sharing_token": sharing_token,
+                    "is_active": True,
+                },
+                {
+                    "$set": {
+                        "is_active": False,
+                        "status": Status.REVOKED,
+                        "terminated_at": datetime.utcnow(),
+                    }
+                },
+            )
+
             res.delete_cookie(
-                key="user",
+                key="x-sharing-token",
                 httponly=True,
                 samesite="lax",
                 secure=False,
             )
 
-            return {"message": "Session terminated successfully", "success": True}
+            return {
+                "success": True,
+                "message": "Sharing session terminated successfully",
+            }
 
-        except HTTPException as e:
+        except HTTPException:
             raise
         except Exception as e:
-            print(e)
+            print("terminate_session error:", e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")

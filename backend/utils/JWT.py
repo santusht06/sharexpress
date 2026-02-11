@@ -244,7 +244,7 @@ async def verify_x_sharing_token(req: Request):
                 status_code=403, detail="Not authorized for this session"
             )
 
-        return session, True
+        return session
 
     except HTTPException:
         raise
