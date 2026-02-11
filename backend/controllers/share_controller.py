@@ -179,3 +179,21 @@ class SharingController:
         except Exception as e:
             print("create_session error:", e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def terminate_session(req: Request, res: Response):
+        try:
+            res.delete_cookie(
+                key="user",
+                httponly=True,
+                samesite="lax",
+                secure=False,
+            )
+
+            return {"message": "Session terminated successfully", "success": True}
+
+        except HTTPException as e:
+            raise
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
