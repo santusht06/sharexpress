@@ -29,7 +29,7 @@ from core.indexes import create_indexes
 from routers.sharing_session_routes import router as Sharing_session_router
 from routers.user_routes import router as User_router
 from routers.qr_routes import router as qr_router
-
+from routers.file_routes import router as file_router
 #  ENV FILE FUNCTION LOADS
 
 
@@ -92,6 +92,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(User_router)
 app.include_router(qr_router)
 app.include_router(Sharing_session_router)
+app.include_router(file_router)
 
 
 # HEALTH CHECKED API

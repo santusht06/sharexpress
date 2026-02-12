@@ -18,18 +18,50 @@ from datetime import datetime
 
 
 class OwnerType(str, Enum):
-    user = "user"
-    session = "session"
+    USER = "user"
+    SESSION = "session"
+
+
+class FileStatus(str, Enum):
+    pending = "pending"
+    uploaded = "uploaded"
+    failed = "failed"
+    deleted = "deleted"
+
+
+class FileCategory(str, Enum):
+    image = "image"
+    video = "video"
+    document = "document"
+    other = "other"
 
 
 class Files(BaseModel):
-    File_ID: UUID = Field(default_factory=uuid4)
-    owner_Type: OwnerType = OwnerType.session
-    owner_ID: UUID
-    original_name: Optional[str]
-    mime_type: Optional[str]
-    size: Optional[int]
-    hashFile: Optional[str]
-    storage_key: Optional[str]
+    file_id: UUID = Field(default_factory=uuid4)
+
+    # Ownership
+    owner_type: OwnerType
+    owner_id: UUID
+    sharing_session_id: UUID
+
+    # File Info
+    original_name: str
+    mime_type: str
+    size: int
+    file_hash: Optional[str]
+    storage_key: str
+    file_category: FileCategory
+
+    # Upload tracking
+    upload_status: FileStatus = FileStatus.pending
+
+    # Security / lifecycle
+    expires_at: Optional[datetime]
+    is_deleted: bool = False
+    deleted_at: Optional[datetime]
+
+    # Stats
+    download_count: int = 0
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime]

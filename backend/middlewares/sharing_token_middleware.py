@@ -45,11 +45,11 @@ async def verify_x_sharing_token(req: Request):
         if payload.get("type") != "sharing":
             raise HTTPException(status_code=403, detail="Invalid token type")
 
-        session = await db.sharing_session.find_one(
+        sharing_session = await db.sharing_session.find_one(
             {"sharing_token": sharing_token, "is_active": True, "status": Status.ACTIVE}
         )
 
-        if not session:
+        if not sharing_session:
             raise HTTPException(
                 status_code=403, detail="Invalid or expired sharing session"
             )
@@ -58,19 +58,19 @@ async def verify_x_sharing_token(req: Request):
 
         if not (
             (
-                session["sender_ID"] == sender_id
-                and session["sender_type"] == sender_type
+                sharing_session["sender_ID"] == sender_id
+                and sharing_session["sender_type"] == sender_type
             )
             or (
-                session["receiver_ID"] == sender_id
-                and session["receiver_type"] == sender_type
+                sharing_session["receiver_ID"] == sender_id
+                and sharing_session["receiver_type"] == sender_type
             )
         ):
             raise HTTPException(
                 status_code=403, detail="Not authorized for this session"
             )
 
-        return session
+        return sharing_session
 
     except HTTPException:
         raise

@@ -13,6 +13,7 @@
 import boto3
 from botocore.client import Config
 from core.config import MINIO_ACCESS_KEY, MINIO_BUCKET, MINIO_ENDPOINT, MINIO_SECRET_KEY
+from datetime import timedelta
 
 
 s3_client = boto3.client(
@@ -29,3 +30,16 @@ def ensure_bucket():
     buckets = s3_client.list_buckets()
     if not any(b["Name"] == MINIO_BUCKET for b in buckets["Buckets"]):
         s3_client.create_bucket(Bucket=MINIO_BUCKET)
+
+
+def generate_presigned_upload_url(object_name: str, content_type: str):
+    url = s3_client.generate_presigned_url(
+        ClientMethod="put_object",
+        Params={
+            "Bucket": MINIO_BUCKET,
+            "Key": object_name,
+            "ContentType": content_type,
+        },
+        ExpiresIn=600,  # 10 minutes
+    )
+    return url
