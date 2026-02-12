@@ -54,8 +54,12 @@ class SharingController:
 
             name = await db.guest_sessions.find_one({"session_id": session_id})
 
-            sender_name = name["guest_name"]
+            if not name:
+                raise HTTPException(status_code=401, detail="Invalid guest session")
 
+            sender_name = name.get("guest_name", "guest_user")
+
+            print("GUEST SESSION NAME = ", name)
             if not session_id:
                 raise HTTPException(
                     status_code=401, detail="No authentication or guest session found"
@@ -178,7 +182,7 @@ class SharingController:
                 "success": True,
                 "mode": "created",
                 "sharing_token": new_sharing_token,
-                "session_id": existing_session["sharing_session_ID"],
+                "session_id": session_data.sharing_session_ID,
                 "sender_name": sender_name,
                 "sender_type": sender_type,
                 "sender_ID": sender_id,

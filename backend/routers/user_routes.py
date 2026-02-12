@@ -30,9 +30,10 @@ async def send_otp(
 async def verify_otp(
     payload: OTPverify,
     response: Response,
+    request: Request,
     _: None = Depends(check_token),
 ):
-    return await UserController.VerifyOTPControl(payload, response)
+    return await UserController.VerifyOTPControl(payload, response, request)
 
 
 @router.get("/google/login")

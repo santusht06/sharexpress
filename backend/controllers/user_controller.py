@@ -63,7 +63,7 @@ class UserController:
             raise HTTPException(status_code=500, detail="Internal server error")
 
     @staticmethod
-    async def VerifyOTPControl(payload: OTP, response: Response):
+    async def VerifyOTPControl(payload: OTP, response: Response, request: Request):
         """Verify OTP and create/login user"""
         try:
             verify_result = await VerifyOTPbyUtils(payload.transactionID, payload.OTP)
@@ -103,6 +103,15 @@ class UserController:
                 )
 
                 GenerateToken(user_id, response)
+                clear_guest_session_cookie = request.cookies.get("guest_session")
+                if clear_guest_session_cookie:
+                    response.delete_cookie(
+                        key="guest_session",
+                        httponly=True,
+                        samesite="lax",
+                        secure=False,
+                    )
+
                 return {
                     "message": "User created and verified successfully",
                     "success": True,
@@ -132,7 +141,17 @@ class UserController:
                     detail="Account is inactive. Please contact support.",
                 )
 
+            clear_guest_session_cookie = request.cookies.get("guest_session")
+            if clear_guest_session_cookie:
+                response.delete_cookie(
+                    key="guest_session",
+                    httponly=True,
+                    samesite="lax",
+                    secure=False,
+                )
+
             GenerateToken(user_exists["user_id"], response)
+
             return {"message": "Login successful", "success": True}
 
         except HTTPException:
