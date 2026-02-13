@@ -1,120 +1,134 @@
-from fastapi import HTTPException, UploadFile
-from uuid import uuid4
-from core.database import get_db
-from datetime import datetime
-from typing import List
-import aiofiles
-import os
 import asyncio
-import mimetypes
+import os
+from uuid import uuid4
+from datetime import datetime
+from fastapi import HTTPException
+from core.database import get_db
+from core.s3_config import s3_client
+from core.config import MINIO_BUCKET
+import magic  # python-magic for real mime detection
 
 db = get_db()
 
 
 class FileController:
     MAX_FILE_SIZE = 20 * 1024 * 1024
-    MAX_TOTAL_SIZE = 100 * 1024 * 1024
-    CHUNK_SIZE = 1024 * 1024
-    UPLOAD_SEMAPHORE = asyncio.Semaphore(3)
+    MAX_FILES_PER_REQUEST = 30
+    PARALLEL_LIMIT = 10
+
+    UPLOAD_SEMAPHORE = asyncio.Semaphore(PARALLEL_LIMIT)
+
+    # ---------------------------
+    # VALIDATION
+    # ---------------------------
 
     @staticmethod
-    def detect_category(mime_type: str) -> str:
-        if mime_type.startswith("image/"):
-            return "image"
-        elif mime_type.startswith("video/"):
-            return "video"
-        elif mime_type.startswith("audio/"):
-            return "audio"
-        elif mime_type in [
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ]:
-            return "document"
-        return "other"
+    def validate_batch(files):
+        if len(files) > FileController.MAX_FILES_PER_REQUEST:
+            raise HTTPException(
+                status_code=400,
+                detail="Maximum 30 files allowed per request",
+            )
+
+        total_size = sum(f.size for f in files)
+
+        if (
+            total_size
+            > FileController.MAX_FILE_SIZE * FileController.MAX_FILES_PER_REQUEST
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Total batch size exceeded",
+            )
+
+        for f in files:
+            if f.size > FileController.MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{f.filename} exceeds 20MB limit",
+                )
+
+    # ---------------------------
+    # INIT MULTI UPLOAD
+    # ---------------------------
 
     @staticmethod
-    def sanitize_filename(filename: str) -> str:
-        return os.path.basename(filename).replace(" ", "_")
-
-    @staticmethod
-    async def upload_files(files: List[UploadFile], session: dict):
+    async def init_upload(files, session):
 
         if not session:
             raise HTTPException(status_code=401, detail="Invalid session")
 
+        FileController.validate_batch(files)
+
         sharing_session_id = session["sharing_session_ID"]
-        owner_id = session["sender_ID"]
-        owner_type = session["sender_type"]
 
-        base_path = "/mnt/storage"
-        total_request_size = 0
-        file_docs = []
-
-        for file in files:
+        async def generate_url(file_data):
             async with FileController.UPLOAD_SEMAPHORE:
                 file_id = str(uuid4())
-                safe_filename = FileController.sanitize_filename(file.filename)
-                storage_key = f"{sharing_session_id}/{file_id}_{safe_filename}"
-                full_path = os.path.join(base_path, storage_key)
+                safe_name = os.path.basename(file_data.filename)
 
-                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                object_key = f"{sharing_session_id}/{file_id}_{safe_name}"
 
-                size = 0
-
-                try:
-                    async with aiofiles.open(full_path, "wb") as out:
-                        while chunk := await file.read(FileController.CHUNK_SIZE):
-                            size += len(chunk)
-                            total_request_size += len(chunk)
-
-                            if size > FileController.MAX_FILE_SIZE:
-                                raise HTTPException(
-                                    status_code=400,
-                                    detail=f"{file.filename} exceeds 20MB limit",
-                                )
-
-                            if total_request_size > FileController.MAX_TOTAL_SIZE:
-                                raise HTTPException(
-                                    status_code=400,
-                                    detail="Total upload size exceeded (100MB)",
-                                )
-
-                            await out.write(chunk)
-
-                except Exception as e:
-                    if os.path.exists(full_path):
-                        os.remove(full_path)
-                    raise e
-
-                mime_type = (
-                    file.content_type
-                    or mimetypes.guess_type(file.filename)[0]
-                    or "application/octet-stream"
-                )
-                category = FileController.detect_category(mime_type)
-
-                file_docs.append(
-                    {
-                        "file_id": file_id,
-                        "sharing_session_id": sharing_session_id,
-                        "sender_ID": owner_id,
-                        "sender_type": owner_type,
-                        "original_name": file.filename,
-                        "mime_type": mime_type,
-                        "size": size,
-                        "storage_key": storage_key,
-                        "file_category": category,
-                        "upload_status": "uploaded",
-                        "is_deleted": False,
-                        "created_at": datetime.utcnow(),
-                    }
+                url = s3_client.generate_presigned_url(
+                    "put_object",
+                    Params={
+                        "Bucket": MINIO_BUCKET,
+                        "Key": object_key,
+                        "ContentType": file_data.content_type,
+                    },
+                    ExpiresIn=600,
                 )
 
-        if file_docs:
-            await db.files.insert_many(file_docs)
+                return {
+                    "file_id": file_id,
+                    "storage_key": object_key,
+                    "upload_url": url,
+                }
 
-        return {
-            "success": True,
-            "files_uploaded": len(file_docs),
-        }
+        results = await asyncio.gather(*(generate_url(f) for f in files))
+
+        return {"files": results}
+
+    # ---------------------------
+    # COMPLETE UPLOAD
+    # ---------------------------
+
+    @staticmethod
+    async def complete_upload(files, session):
+
+        if not session:
+            raise HTTPException(status_code=401, detail="Invalid session")
+
+        docs = []
+
+        for f in files:
+            # Verify object exists in MinIO
+            try:
+                s3_client.head_object(
+                    Bucket=MINIO_BUCKET,
+                    Key=f["storage_key"],
+                )
+            except Exception:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Object {f['storage_key']} not found in storage",
+                )
+
+            docs.append(
+                {
+                    "file_id": f["file_id"],
+                    "sharing_session_id": session["sharing_session_ID"],
+                    "sender_ID": session["sender_ID"],
+                    "sender_type": session["sender_type"],
+                    "storage_key": f["storage_key"],
+                    "size": f["size"],
+                    "mime_type": f["content_type"],
+                    "is_deleted": False,
+                    "created_at": datetime.utcnow(),
+                }
+            )
+
+        if docs:
+            await db.files.insert_many(docs)
+
+        return {"success": True, "files_saved": len(docs)}

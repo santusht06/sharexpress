@@ -22,6 +22,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import os
 from contextlib import asynccontextmanager
 from core.indexes import create_indexes
+from core.s3_config import ensure_bucket
 
 # ROUTERS IMPORTS
 
@@ -34,6 +35,12 @@ from routers.file_routes import router as file_router
 
 
 load_dotenv()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ensure_bucket()
+    yield
 
 
 # @asynccontextmanager

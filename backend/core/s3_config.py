@@ -11,19 +11,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
 import boto3
+import boto3
 from botocore.client import Config
-from core.config import MINIO_ACCESS_KEY, MINIO_BUCKET, MINIO_ENDPOINT, MINIO_SECRET_KEY
-from datetime import timedelta
-
+from core.config import (
+    MINIO_ACCESS_KEY,
+    MINIO_SECRET_KEY,
+    MINIO_ENDPOINT,
+    MINIO_REGION,
+    MINIO_BUCKET,
+)
 
 s3_client = boto3.client(
     "s3",
     endpoint_url=MINIO_ENDPOINT,
     aws_access_key_id=MINIO_ACCESS_KEY,
     aws_secret_access_key=MINIO_SECRET_KEY,
-    region_name="us-east-1",
-    config=Config(signature_version="s3v4"),
+    region_name=MINIO_REGION,
+    config=Config(
+        signature_version="s3v4",
+        s3={"addressing_style": "path"},  # important for MinIO
+    ),
 )
+
+print(MINIO_ACCESS_KEY, MINIO_BUCKET, MINIO_ENDPOINT, MINIO_SECRET_KEY)
 
 
 def ensure_bucket():
@@ -38,8 +48,7 @@ def generate_presigned_upload_url(object_name: str, content_type: str):
         Params={
             "Bucket": MINIO_BUCKET,
             "Key": object_name,
-            "ContentType": content_type,
         },
-        ExpiresIn=600,  # 10 minutes
+        ExpiresIn=600,
     )
     return url
