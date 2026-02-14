@@ -58,7 +58,6 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
-# ALL MIDDLEWARES CONFIGURES FROM HERE
 
 app.add_middleware(
     SessionMiddleware,
@@ -79,8 +78,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
-
-# MIDDLEWARE CONFIGURED ENDED
 
 
 @app.exception_handler(Exception)

@@ -42,7 +42,7 @@ def ensure_bucket():
         s3_client.create_bucket(Bucket=MINIO_BUCKET)
 
 
-def generate_presigned_upload_url(object_name: str, content_type: str):
+def generate_presigned_upload_url(object_name: str):
     url = s3_client.generate_presigned_url(
         ClientMethod="put_object",
         Params={
@@ -52,3 +52,6 @@ def generate_presigned_upload_url(object_name: str, content_type: str):
         ExpiresIn=600,
     )
     return url
+
+
+# print(s3_client.list_buckets())
