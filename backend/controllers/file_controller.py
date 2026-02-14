@@ -35,11 +35,6 @@ from core.config import MINIO_BUCKET
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------
-# CUSTOM EXCEPTIONS
-# ---------------------------
-
-
 class FileUploadError(Exception):
     """Base exception for file upload errors"""
 
@@ -62,11 +57,6 @@ class QuotaExceededError(FileUploadError):
     """User quota exceeded"""
 
     pass
-
-
-# ---------------------------
-# CIRCUIT BREAKER PATTERN
-# ---------------------------
 
 
 class CircuitBreaker:
@@ -518,16 +508,13 @@ class FileController:
             if not session or not session.get("sharing_session_ID"):
                 raise HTTPException(status_code=401, detail="Invalid session")
 
-            # Validate batch
             await self.validate_batch(files, session)
 
             sharing_session_id = session["sharing_session_ID"]
 
-            # Generate presigned URLs in parallel with concurrency control
             tasks = [self._generate_presigned_url(f, sharing_session_id) for f in files]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Check for errors
             successful_results = []
             errors = []
             for i, result in enumerate(results):
@@ -600,20 +587,17 @@ class FileController:
         start_time = time.time()
 
         try:
-            # Validate session
             if not session or not session.get("sharing_session_ID"):
                 raise HTTPException(status_code=401, detail="Invalid session")
 
             if not files:
                 raise HTTPException(status_code=400, detail="No files provided")
 
-            # Verify uploads in parallel
             verification_tasks = [
                 self._verify_and_prepare_document(f, session) for f in files
             ]
             results = await asyncio.gather(*verification_tasks, return_exceptions=True)
 
-            # Separate successful and failed uploads
             successful_docs = []
             failed_files = []
             total_size = 0
@@ -628,26 +612,22 @@ class FileController:
                     successful_docs.append(result)
                     total_size += result["size"]
 
-            # Save to database in transaction
             saved_count = 0
             if successful_docs:
                 try:
                     saved_count = await self._save_documents_batch(successful_docs)
 
-                    # Update quota cache
                     await self.quota_manager.increment_usage(
                         user_id=session["sender_ID"],
                         session_id=session["sharing_session_ID"],
                         size=total_size,
                     )
 
-                    # Record metrics
                     duration = time.time() - start_time
                     await self.metrics.record_upload(total_size, duration)
 
                 except Exception as e:
                     logger.error(f"Database save failed: {e}", exc_info=True)
-                    # Cleanup uploaded files on DB failure
                     cleanup_tasks = [
                         self._cleanup_storage(doc["storage_key"])
                         for doc in successful_docs
