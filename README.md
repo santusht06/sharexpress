@@ -1,6 +1,6 @@
 201~200~# 🚀 Sharexpress Backend
 
-ShareXpress Backend ek **secure, scalable FastAPI-based authentication system** hai jo modern authentication techniques use karta hai jaise:
+Sharexpress Backend ek **secure, scalable FastAPI-based authentication system** hai jo modern authentication techniques use karta hai jaise:
 
 - 🔐 Email OTP Authentication
 - 🔑 Google OAuth 2.0 Login
