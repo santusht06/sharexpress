@@ -21,13 +21,18 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from functools import wraps
 import time
-
+from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 from botocore.exceptions import ClientError, BotoCoreError
 import magic  # python-magic for real mime detection
 
 from core.database import get_db
-from core.s3_config import s3_client, generate_presigned_upload_url
+from core.s3_config import (
+    s3_client,
+    s3_internal,
+    s3_public,
+    generate_presigned_upload_url,
+)
 from core.config import MINIO_BUCKET
 
 
@@ -144,8 +149,6 @@ def async_retry(
 
 
 class RateLimiter:
-    """Token bucket rate limiter"""
-
     def __init__(self, rate: int, per: int):
         self.rate = rate
         self.per = per
@@ -171,8 +174,6 @@ class RateLimiter:
 
 
 class MetricsCollector:
-    """Collect and expose metrics for monitoring"""
-
     def __init__(self):
         self.upload_counter = 0
         self.upload_bytes = 0
@@ -215,9 +216,6 @@ class MetricsCollector:
 
 
 class FileValidator:
-    """Advanced file validation and security checks"""
-
-    # Dangerous file extensions
     DANGEROUS_EXTENSIONS = {
         ".exe",
         ".bat",
@@ -237,9 +235,7 @@ class FileValidator:
         ".bash",
     }
 
-    # Allowed MIME types (whitelist approach)
     ALLOWED_MIME_TYPES = {
-        # Documents
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -397,6 +393,9 @@ class QuotaManager:
         cache_key = f"{user_id}:{session_id}"
         if cache_key in self._cache:
             self._cache[cache_key] += size
+
+
+"""FILE CONTROLLER STARTS FROM HERE """
 
 
 class FileController:
@@ -566,7 +565,7 @@ class FileController:
                 # Generate presigned URL (sync operation in thread pool)
                 loop = asyncio.get_event_loop()
                 url = await loop.run_in_executor(
-                    None, generate_presigned_upload_url(object_key)
+                    None, generate_presigned_upload_url, object_key
                 )
 
                 return {
@@ -583,7 +582,6 @@ class FileController:
     async def complete_upload(
         self, files: List[Dict[str, Any]], session: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Complete upload and save metadata to database"""
         start_time = time.time()
 
         try:
@@ -674,7 +672,7 @@ class FileController:
             try:
                 metadata = await loop.run_in_executor(
                     None,
-                    lambda: s3_client.head_object(
+                    lambda: s3_internal.head_object(
                         Bucket=MINIO_BUCKET,
                         Key=file_info["storage_key"],
                     ),
@@ -746,7 +744,7 @@ class FileController:
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
                 None,
-                lambda: s3_client.delete_object(Bucket=MINIO_BUCKET, Key=storage_key),
+                lambda: s3_internal.delete_object(Bucket=MINIO_BUCKET, Key=storage_key),
             )
             logger.info(f"Cleaned up storage key: {storage_key}")
         except Exception as e:
@@ -771,7 +769,8 @@ class FileController:
             # Check S3
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
-                None, lambda: s3_client.list_objects_v2(Bucket=MINIO_BUCKET, MaxKeys=1)
+                None,
+                lambda: s3_internal.list_objects_v2(Bucket=MINIO_BUCKET, MaxKeys=1),
             )
             s3_healthy = True
         except Exception as e:
@@ -785,6 +784,141 @@ class FileController:
             "circuit_breaker_state": self.circuit_breaker.state,
             "timestamp": datetime.utcnow().isoformat(),
         }
+
+    async def list_session_files_user(
+        self,
+        session_id,
+        request,
+        include_deleted,
+        session,
+    ):
+        try:
+            if session.get("sharing_session_ID") != session_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Not authorized to access this session's files",
+                )
+
+            logger.info(f"List files request: session={session_id}")
+
+            query = {"sharing_session_id": session_id}
+            if not include_deleted:
+                query["is_deleted"] = False
+
+            files = (
+                await self.db.files.find(query, {"_id": 0})
+                .sort("created_at", -1)
+                .to_list(length=1000)
+            )
+
+            total_size = sum(f.get("size", 0) for f in files)
+
+            for f in files:
+                if f.get("created_at"):
+                    f["created_at"] = f["created_at"].isoformat()
+                if f.get("updated_at"):
+                    f["updated_at"] = f["updated_at"].isoformat()
+
+            return {
+                "success": True,
+                "files": files,
+                "total_count": len(files),
+                "total_size": total_size,
+                "total_size_human": f"{total_size / 1024 / 1024:.2f} MB",
+            }
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            logger.error(f"Error listing files: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to list files")
+
+    @async_retry(max_attempts=3, delay=0.5, exceptions=(ClientError, BotoCoreError))
+    async def generate_download_url(
+        self, file_id: str, session: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate secure presigned download URL"""
+
+        # 1️⃣ Validate session
+        if not session or not session.get("sharing_session_ID"):
+            raise HTTPException(status_code=401, detail="Invalid session")
+
+        # 2️⃣ Fetch file metadata from DB
+        file_doc = await self.db.files.find_one(
+            {
+                "file_id": file_id,
+                "sharing_session_id": session["sharing_session_ID"],
+                "is_deleted": False,
+            }
+        )
+
+        if not file_doc:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        storage_key = file_doc["storage_key"]
+
+        # 3️⃣ Generate presigned GET URL (run sync in executor)
+        loop = asyncio.get_event_loop()
+
+        def _generate():
+            return s3_public.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": MINIO_BUCKET,
+                    "Key": storage_key,
+                },
+                ExpiresIn=600,
+            )
+
+        try:
+            download_url = await self.circuit_breaker.call(
+                lambda: loop.run_in_executor(None, _generate)
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+        return {
+            "file_id": file_id,
+            "filename": file_doc["filename"],
+            "download_url": download_url,
+            "expires_in": 600,
+        }
+
+    async def debug_bucket_contents(self, prefix: str = ""):
+        try:
+            loop = asyncio.get_event_loop()
+
+            def _list():
+                return s3_internal.list_objects_v2(
+                    Bucket=MINIO_BUCKET, Prefix=prefix, MaxKeys=100
+                )
+
+            response = await loop.run_in_executor(None, _list)
+
+            objects = []
+            for obj in response.get("Contents", []):
+                objects.append(
+                    {
+                        "key": obj["Key"],
+                        "size": obj["Size"],
+                        "last_modified": obj["LastModified"].isoformat(),
+                        "etag": obj["ETag"].strip('"'),
+                    }
+                )
+
+            return {
+                "success": True,
+                "bucket": MINIO_BUCKET,
+                "count": len(objects),
+                "objects": objects,
+            }
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+
+"""FILE CONTROLLER ENDS HERE """
 
 
 class BackgroundCleaner:

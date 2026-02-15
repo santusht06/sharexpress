@@ -16,14 +16,15 @@ from botocore.client import Config
 from core.config import (
     MINIO_ACCESS_KEY,
     MINIO_SECRET_KEY,
-    MINIO_ENDPOINT,
     MINIO_REGION,
     MINIO_BUCKET,
+    MINIO_ENDPOINT_PUBLIC,
+    MINIO_ENDPOINT_INTERNAL,
 )
 
 s3_client = boto3.client(
     "s3",
-    endpoint_url=MINIO_ENDPOINT,
+    endpoint_url=MINIO_ENDPOINT_PUBLIC,
     aws_access_key_id=MINIO_ACCESS_KEY,
     aws_secret_access_key=MINIO_SECRET_KEY,
     region_name=MINIO_REGION,
@@ -33,17 +34,38 @@ s3_client = boto3.client(
     ),
 )
 
-print(MINIO_ACCESS_KEY, MINIO_BUCKET, MINIO_ENDPOINT, MINIO_SECRET_KEY)
 
+# INTERNAL CLIENT (for verification)
+s3_internal = boto3.client(
+    "s3",
+    endpoint_url=MINIO_ENDPOINT_INTERNAL,
+    aws_access_key_id=MINIO_ACCESS_KEY,
+    aws_secret_access_key=MINIO_SECRET_KEY,
+    region_name=MINIO_REGION,
+    config=Config(
+        signature_version="s3v4",
+        s3={"addressing_style": "path"},
+    ),
+)
 
-def ensure_bucket():
-    buckets = s3_client.list_buckets()
-    if not any(b["Name"] == MINIO_BUCKET for b in buckets["Buckets"]):
-        s3_client.create_bucket(Bucket=MINIO_BUCKET)
+# PUBLIC CLIENT (for presigned URLs)
+s3_public = boto3.client(
+    "s3",
+    endpoint_url=MINIO_ENDPOINT_PUBLIC,
+    aws_access_key_id=MINIO_ACCESS_KEY,
+    aws_secret_access_key=MINIO_SECRET_KEY,
+    region_name=MINIO_REGION,
+    config=Config(
+        signature_version="s3v4",
+        s3={"addressing_style": "path"},
+    ),
+)
+
+print(MINIO_ACCESS_KEY, MINIO_BUCKET, MINIO_ENDPOINT_PUBLIC, MINIO_SECRET_KEY)
 
 
 def generate_presigned_upload_url(object_name: str):
-    url = s3_client.generate_presigned_url(
+    url = s3_public.generate_presigned_url(
         ClientMethod="put_object",
         Params={
             "Bucket": MINIO_BUCKET,
@@ -54,4 +76,7 @@ def generate_presigned_upload_url(object_name: str):
     return url
 
 
-# print(s3_client.list_buckets())
+def ensure_bucket():
+    buckets = s3_client.list_buckets()
+    if not any(b["Name"] == MINIO_BUCKET for b in buckets["Buckets"]):
+        s3_client.create_bucket(Bucket=MINIO_BUCKET)

@@ -24,6 +24,7 @@ from models.File_setup import (
     CompleteUploadItem,
     CompleteUploadRequest,
 )
+from core.s3_config import s3_client
 
 # Router
 router = APIRouter(prefix="/files", tags=["files"])
@@ -78,3 +79,11 @@ async def get_metrics():
 @router.get("/system-health")
 async def system_health():
     return await file_controller.health_check()
+
+
+@router.get("/debug-bucket")
+async def debug_bucket(
+    prefix: str = "",
+):
+    controller = FileController()
+    return await controller.debug_bucket_contents(prefix)
