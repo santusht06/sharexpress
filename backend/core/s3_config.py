@@ -30,12 +30,11 @@ s3_client = boto3.client(
     region_name=MINIO_REGION,
     config=Config(
         signature_version="s3v4",
-        s3={"addressing_style": "path"},  # important for MinIO
+        s3={"addressing_style": "path"},
     ),
 )
 
 
-# INTERNAL CLIENT (for verification)
 s3_internal = boto3.client(
     "s3",
     endpoint_url=MINIO_ENDPOINT_INTERNAL,
@@ -48,7 +47,6 @@ s3_internal = boto3.client(
     ),
 )
 
-# PUBLIC CLIENT (for presigned URLs)
 s3_public = boto3.client(
     "s3",
     endpoint_url=MINIO_ENDPOINT_PUBLIC,

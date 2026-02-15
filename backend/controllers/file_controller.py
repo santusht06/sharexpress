@@ -336,15 +336,13 @@ class QuotaManager:
     def __init__(self, db):
         self.db = db
         self._cache = {}
-        self._cache_ttl = 300  # 5 minutes
+        self._cache_ttl = 300
         self._cache_timestamps = {}
 
     async def check_quota(self, user_id: str, session_id: str, size: int) -> bool:
         """Check if user has enough quota"""
-        # Daily quota: 1GB per user
         DAILY_QUOTA = 1024 * 1024 * 1024
 
-        # Check cache first
         cache_key = f"{user_id}:{session_id}"
         if cache_key in self._cache:
             if time.time() - self._cache_timestamps[cache_key] < self._cache_ttl:
@@ -872,9 +870,11 @@ class FileController:
             )
 
         try:
-            download_url = await self.circuit_breaker.call(
-                lambda: loop.run_in_executor(None, _generate)
-            )
+
+            async def wrapped():
+                return await loop.run_in_executor(None, _generate)
+
+            download_url = await self.circuit_breaker.call(wrapped)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
