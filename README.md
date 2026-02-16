@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# ShareXpress
+# Sharexpress
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
@@ -15,7 +14,7 @@
 
 ----
 
-ShareXpress is an open-source, production-ready file sharing platform that enables **secure, time-limited file transfers** via QR codes. Built with modern technologies and security-first principles, ShareXpress provides enterprise-grade file sharing capabilities for organizations of all sizes.
+Sharexpress is an open-source, production-ready file sharing platform that enables **secure, time-limited file transfers** via QR codes. Built with modern technologies and security-first principles, ShareXpress provides enterprise-grade file sharing capabilities for organizations of all sizes.
 
 ShareXpress provides basic mechanisms for secure file sharing, session management, and access control across distributed systems.
 
