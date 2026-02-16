@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ShareXpress
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -414,3 +415,228 @@ ShareXpress is actively maintained and used in production by organizations world
 [Python environment]: https://www.python.org/downloads/
 [Docker environment]: https://docs.docker.com/engine
 [troubleshooting guide]: docs/troubleshooting.md
+=======
+# sharexpress
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python
+Version](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-green.svg)](https://fastapi.tiangolo.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0%2B-green.svg)](https://www.mongodb.com/)
+
+```{=html}
+<p align="center">
+```
+`<img src="docs/images/logo.svg" width="180" alt="sharexpress logo">`{=html}
+```{=html}
+</p>
+```
+
+------------------------------------------------------------------------
+
+**sharexpress** is a secure, session-based file sharing platform that
+enables time-limited file transfers using QR codes and controlled access
+policies.
+
+Built with FastAPI, MongoDB, and S3-compatible storage, sharexpress
+focuses on secure file governance, session management, and scalable
+distributed architecture.
+
+🌐 Website: https://sharexpress.in
+
+------------------------------------------------------------------------
+
+## Overview
+
+sharexpress provides:
+
+-   Secure QR-based file pairing
+-   Session-bound access control
+-   Time-limited file sharing
+-   Role-based permission enforcement
+-   S3-compatible object storage integration
+-   Background cleanup and lifecycle management
+
+------------------------------------------------------------------------
+
+## Architecture
+
+    Client (Web / API)
+            │
+            ▼
+    FastAPI API Layer
+            │
+     ┌──────┼───────────────┐
+     │      │               │
+     ▼      ▼               ▼
+    Auth   QR Module     File Module
+     │      │               │
+     └──────┼───────────────┘
+            │
+            ▼
+    MongoDB (Metadata) + S3 Storage
+
+Core modules:
+
+-   Authentication Service
+-   QR Code Service
+-   Sharing Session Manager
+-   File Controller (upload/download)
+-   Permission Engine
+-   Background Cleaner
+
+------------------------------------------------------------------------
+
+## Features
+
+-   🔐 JWT-based authentication (RS256)
+-   📱 QR-based secure session pairing
+-   📁 Secure presigned upload & download URLs
+-   🛡 Rate limiting and quota enforcement
+-   🔄 Circuit breaker + retry mechanisms
+-   📊 Basic metrics and health checks
+-   🧹 Automatic expired file cleanup
+-   ☁ S3-compatible storage (MinIO / AWS S3)
+
+------------------------------------------------------------------------
+
+## Quick Start
+
+### Requirements
+
+-   Python 3.8+
+-   MongoDB 6.0+
+-   MinIO or AWS S3
+-   OpenSSL (for RSA key generation)
+
+------------------------------------------------------------------------
+
+### Installation
+
+``` bash
+git clone https://github.com/yourusername/sharexpress
+cd sharexpress
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Generate RSA keys:
+
+``` bash
+mkdir -p keys
+openssl genrsa -out keys/private.pem 2048
+openssl rsa -in keys/private.pem -pubout -out keys/public.pem
+```
+
+Configure environment:
+
+``` bash
+cp .env.example .env
+# Update values inside .env
+```
+
+Initialize database indexes:
+
+``` bash
+python setup_indexes.py
+```
+
+Run the server:
+
+``` bash
+uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+Visit:
+
+http://localhost:8080/docs
+
+------------------------------------------------------------------------
+
+## Deployment
+
+### Docker
+
+``` bash
+docker-compose up -d
+```
+
+### Kubernetes
+
+``` bash
+kubectl apply -f k8s/deployment.yaml
+```
+
+------------------------------------------------------------------------
+
+## Security Model
+
+sharexpress implements:
+
+-   Session-bound access control
+-   Permission-based operations (view / edit / download / full)
+-   Expiry-based sharing sessions
+-   Presigned URL expiration
+-   Secure filename validation
+-   MIME type verification
+-   Storage integrity verification
+-   Rate limiting per session
+-   Daily upload quota management
+
+------------------------------------------------------------------------
+
+## Tech Stack
+
+  Layer        Technology
+  ------------ ---------------------
+  Backend      FastAPI
+  Database     MongoDB
+  Storage      MinIO / AWS S3
+  Auth         JWT (RS256)
+  Async        asyncio
+  Validation   python-magic
+  Deployment   Docker / Kubernetes
+
+------------------------------------------------------------------------
+
+## Roadmap
+
+### v1.1
+
+-   WebSocket real-time updates
+-   File versioning
+-   Permission middleware refinement
+
+### v2.0
+
+-   End-to-end encryption
+-   Distributed caching (Redis)
+-   Horizontal scaling improvements
+
+------------------------------------------------------------------------
+
+## Contributing
+
+Contributions are welcome.
+
+1.  Fork repository\
+2.  Create feature branch\
+3.  Submit pull request
+
+------------------------------------------------------------------------
+
+## License
+
+Apache License 2.0
+
+Copyright 2026 sharexpress contributors
+
+------------------------------------------------------------------------
+
+## Links
+
+🌐 Website: https://sharexpress.in\
+📖 Docs: https://sharexpress.in/docs\
+🐛 Issues: https://github.com/yourusername/sharexpress/issues
+>>>>>>> 88714b3 (README FILE UPDATED)
