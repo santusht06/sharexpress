@@ -46,9 +46,9 @@ class UserController:
 
             transaction_id = validate_otp.get("transactionID")
 
-            # send_mail = await send_otp_email(user.email, otp_code)
-            # if not send_mail:
-            #     raise HTTPException(status_code=400, detail="Failed to send email")
+            send_mail = await send_otp_email(user.email, otp_code)
+            if not send_mail:
+                raise HTTPException(status_code=400, detail="Failed to send email")
 
             return {
                 "message": f"OTP has been sent successfully to {user.email}",

@@ -34,16 +34,15 @@ DB_NAME = os.getenv("DB_NAME")
 # EMAILS
 
 MAIL_CONFIG = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_USERNAME"),
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME") or "",
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD") or "",
+    MAIL_FROM=os.getenv("MAIL_USERNAME") or "",
+    MAIL_PORT=int(os.getenv("MAIL_PORT", 465)),
+    MAIL_SERVER=os.getenv("MAIL_SERVER") or "",
+    MAIL_STARTTLS=os.getenv("MAIL_STARTTLS", "False") == "True",
+    MAIL_SSL_TLS=os.getenv("MAIL_SSL", "True") == "True",
     USE_CREDENTIALS=True,
 )
-
 #  GOOGLE AUTH CONFIG
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
