@@ -36,7 +36,6 @@ from core.s3_config import (
 from core.config import MINIO_BUCKET
 
 
-# Configure structured logging
 logger = logging.getLogger(__name__)
 
 
@@ -78,7 +77,7 @@ class CircuitBreaker:
         self.expected_exception = expected_exception
         self.failure_count = 0
         self.last_failure_time = None
-        self.state = "closed"  # closed, open, half-open
+        self.state = "closed"
         self._lock = asyncio.Lock()
 
     async def call(self, func, *args, **kwargs):
@@ -187,7 +186,6 @@ class MetricsCollector:
             self.upload_bytes += bytes_size
             self.upload_durations.append(duration)
 
-            # Keep only last 1000 durations for memory efficiency
             if len(self.upload_durations) > 1000:
                 self.upload_durations = self.upload_durations[-1000:]
 
@@ -280,18 +278,14 @@ class FileValidator:
     @staticmethod
     def validate_filename(filename: str) -> str:
         """Sanitize and validate filename"""
-        # Remove path components
         safe_name = os.path.basename(filename)
 
-        # Remove null bytes and control characters
         safe_name = "".join(char for char in safe_name if ord(char) >= 32)
 
-        # Limit length
         if len(safe_name) > 255:
             name, ext = os.path.splitext(safe_name)
             safe_name = name[:250] + ext
 
-        # Check for dangerous extensions
         ext = os.path.splitext(safe_name)[1].lower()
         if ext in FileValidator.DANGEROUS_EXTENSIONS:
             raise ValidationError(f"File type {ext} not allowed for security reasons")
@@ -305,14 +299,11 @@ class FileValidator:
     async def validate_mime_type(file_content: bytes, declared_mime: str) -> str:
         """Validate MIME type using actual file content"""
         try:
-            # Use python-magic to detect actual MIME type
             detected_mime = magic.from_buffer(file_content[:2048], mime=True)
 
-            # Check if detected MIME is in allowed list
             if detected_mime not in FileValidator.ALLOWED_MIME_TYPES:
                 raise ValidationError(f"File type {detected_mime} not allowed")
 
-            # Warn if declared and detected don't match
             if detected_mime != declared_mime:
                 logger.warning(
                     f"MIME type mismatch: declared={declared_mime}, "
@@ -399,13 +390,11 @@ class QuotaManager:
 class FileController:
     """Production-grade file sharing controller"""
 
-    # Configuration
-    MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+    MAX_FILE_SIZE = 20 * 1024 * 1024
     MAX_FILES_PER_REQUEST = 30
     PARALLEL_LIMIT = 10
-    CHUNK_SIZE = 5 * 1024 * 1024  # 5MB chunks for multipart upload
+    CHUNK_SIZE = 5 * 1024 * 1024
 
-    # Concurrency controls
     UPLOAD_SEMAPHORE = asyncio.Semaphore(PARALLEL_LIMIT)
 
     # Shared instances
@@ -414,7 +403,7 @@ class FileController:
         recovery_timeout=60,
         expected_exception=(ClientError, BotoCoreError),
     )
-    rate_limiter = RateLimiter(rate=100, per=60)  # 100 requests per minute
+    rate_limiter = RateLimiter(rate=100, per=60)
     metrics = MetricsCollector()
 
     def __init__(self):
@@ -662,10 +651,8 @@ class FileController:
     async def _verify_and_prepare_document(
         self, file_info: Dict[str, Any], session: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Verify file exists in storage and prepare document for DB"""
 
         async def _verify():
-            # Verify object exists in storage
             loop = asyncio.get_event_loop()
             try:
                 metadata = await loop.run_in_executor(

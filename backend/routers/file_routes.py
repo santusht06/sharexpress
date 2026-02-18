@@ -8,82 +8,392 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
-#
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
-from typing import List
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from controllers.file_controller import FileController
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import logging
+
+from controllers.file_controller import (
+    FileController,
+    FileUploadError,
+    ValidationError,
+    StorageError,
+    QuotaExceededError,
+)
 from middlewares.sharing_token_middleware import verify_x_sharing_token
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from models.File_setup import (
-    UploadInitItem,
     UploadInitRequest,
-    CompleteUploadItem,
+    UploadInitResponse,
+    CompleteUploadResponse,
     CompleteUploadRequest,
+    DownloadResponse,
+    FileListResponse,
+    MetricsResponse,
+    HealthCheckResponse,
 )
-from core.s3_config import s3_client
+
+# Logger
+logger = logging.getLogger(__name__)
 
 # Router
 router = APIRouter(prefix="/files", tags=["files"])
 
-# Rate limiter (IP based)
+# Rate limiter (IP-based)
 limiter = Limiter(key_func=get_remote_address)
 
-# Create controller instance
-file_controller = FileController()
 
-
-@router.get("/health")
-async def get_files_health():
-    return {"success": True, "message": "File route working properly"}
-
-
-@router.post("/init-upload")
+@router.post(
+    "/init-upload",
+    response_model=UploadInitResponse,
+    status_code=status.HTTP_200_OK,
+)
 @limiter.limit("20/minute")
 async def init_upload(
     request: Request,
     payload: UploadInitRequest,
-    session=Depends(verify_x_sharing_token),
+    session: Dict[str, Any] = Depends(verify_x_sharing_token),
 ):
-    return await file_controller.init_upload(files=payload.files, session=session)
+    """Initialize file upload with presigned URLs"""
+    try:
+        controller = FileController()
+
+        # Check upload permission
+        if not session.get("permissions", {}).get("can_upload", True):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Upload permission denied for this session",
+            )
+
+        logger.info(
+            f"Init upload request: session={session.get('sharing_session_ID')}, "
+            f"files={len(payload.files)}"
+        )
+
+        result = await controller.init_upload(files=payload.files, session=session)
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+
+    except ValidationError as e:
+        logger.warning(f"Validation error in init_upload: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    except QuotaExceededError as e:
+        logger.warning(f"Quota exceeded: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Unexpected error in init_upload: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to initialize upload",
+        )
 
 
-@router.post("/complete-upload")
+@router.post(
+    "/complete-upload",
+    response_model=CompleteUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def complete_upload(
-    data: CompleteUploadRequest,
-    session=Depends(verify_x_sharing_token),
+    request: Request,
+    payload: CompleteUploadRequest,
+    session: Dict[str, Any] = Depends(verify_x_sharing_token),
 ):
-    controller = FileController()
+    """Complete file upload after S3 upload"""
+    try:
+        controller = FileController()
 
-    files_as_dict = [f.model_dump() for f in data.files]
+        logger.info(
+            f"Complete upload request: session={session.get('sharing_session_ID')}, "
+            f"files={len(payload.files)}"
+        )
 
-    return await controller.complete_upload(files_as_dict, session)
+        # Convert Pydantic models to dicts
+        files_as_dict = [f.model_dump() for f in payload.files]
+
+        result = await controller.complete_upload(files_as_dict, session)
+
+        return JSONResponse(status_code=status.HTTP_201_CREATED, content=result)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Unexpected error in complete_upload: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to complete upload",
+        )
 
 
-@router.get("/download/{file_id}")
+@router.get(
+    "/download/{file_id}",
+    response_model=DownloadResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def download_file(
     file_id: str,
-    session=Depends(verify_x_sharing_token),
+    session: Dict[str, Any] = Depends(verify_x_sharing_token),
 ):
-    return await file_controller.generate_download_url(file_id=file_id, session=session)
+    """Generate presigned download URL"""
+    try:
+        # Check download permission
+        if not session.get("permissions", {}).get("can_download", True):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Download permission denied for this session",
+            )
+
+        controller = FileController()
+
+        logger.info(
+            f"Download request: file_id={file_id}, "
+            f"session={session.get('sharing_session_ID')}"
+        )
+
+        result = await controller.generate_download_url(
+            file_id=file_id, session=session
+        )
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Unexpected error in download_file: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate download URL",
+        )
 
 
-@router.get("/metrics")
+@router.get(
+    "/session/{session_id}/list",
+    response_model=FileListResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def list_session_files(
+    session_id: str,
+    request: Request,
+    include_deleted: bool = Query(default=False, description="Include deleted files"),
+    session: Dict[str, Any] = Depends(verify_x_sharing_token),
+):
+    """List all files in a session"""
+    try:
+        controller = FileController()
+
+        result = await controller.list_session_files_user(
+            session_id=session_id,
+            request=request,
+            include_deleted=include_deleted,
+            session=session,
+        )
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Unexpected error in list_session_files: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list files",
+        )
+
+
+@router.delete(
+    "/{file_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_file(
+    file_id: str,
+    permanent: bool = Query(default=False, description="Permanently delete from S3"),
+    session: Dict[str, Any] = Depends(verify_x_sharing_token),
+):
+    try:
+        controller = FileController()
+
+        # Get file document
+        file_doc = await controller.db.files.find_one(
+            {"file_id": file_id, "sharing_session_id": session["sharing_session_ID"]}
+        )
+
+        if not file_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+            )
+
+        # Check if user is sender
+        if file_doc["sender_ID"] != session["sender_ID"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only file sender can delete files",
+            )
+
+        if permanent:
+            # Permanent delete: remove from S3
+            await controller._cleanup_storage(file_doc["storage_key"])
+            logger.info(f"Permanently deleted file {file_id} from S3")
+
+        # Update database (soft delete)
+        await controller.db.files.update_one(
+            {"file_id": file_id},
+            {"$set": {"is_deleted": True, "deleted_at": datetime.utcnow()}},
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "success": True,
+                "file_id": file_id,
+                "deleted": True,
+                "permanent": permanent,
+            },
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"Unexpected error in delete_file: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete file",
+        )
+
+
+@router.get(
+    "/metrics",
+    response_model=MetricsResponse,
+)
 async def get_metrics():
-    return await file_controller.get_metrics()
+    """Get upload metrics"""
+    try:
+        controller = FileController()
+        metrics = await controller.get_metrics()
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=metrics)
+
+    except Exception as e:
+        logger.error(f"Error retrieving metrics: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve metrics",
+        )
 
 
-@router.get("/system-health")
+@router.get(
+    "/system-health",
+    response_model=HealthCheckResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def system_health():
-    return await file_controller.health_check()
+    """System health check"""
+    try:
+        controller = FileController()
+        health = await controller.health_check()
+
+        status_code = (
+            status.HTTP_200_OK
+            if health["status"] == "healthy"
+            else status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+        return JSONResponse(status_code=status_code, content=health)
+
+    except Exception as e:
+        logger.error(f"Health check failed: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "error",
+                "database": "unknown",
+                "storage": "unknown",
+                "circuit_breaker_state": "unknown",
+                "timestamp": datetime.utcnow().isoformat(),
+                "error": str(e),
+            },
+        )
 
 
-@router.get("/debug-bucket")
-async def debug_bucket(
-    prefix: str = "",
+@router.get(
+    "/health",
+    status_code=status.HTTP_200_OK,
+    summary="Basic health check",
+    description="Simple endpoint returning 200 OK to verify service is running.",
+)
+async def basic_health():
+    """Basic health check endpoint"""
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "success": True,
+            "message": "File service operational",
+            "timestamp": datetime.utcnow().isoformat(),
+        },
+    )
+
+
+@router.get(
+    "/debug/bucket",
+    status_code=status.HTTP_200_OK,
+    include_in_schema=True,
+)
+async def debug_bucket_contents(
+    prefix: str = Query(default="", description="Filter by key prefix"),
 ):
-    controller = FileController()
-    return await controller.debug_bucket_contents(prefix)
+    """Debug endpoint to list bucket contents"""
+    try:
+        controller = FileController()
+        result = await controller.debug_bucket_contents(prefix=prefix)
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+
+    except Exception as e:
+        logger.error(f"Debug bucket contents failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.post(
+    "/cleanup/expired",
+    status_code=status.HTTP_200_OK,
+    include_in_schema=True,
+)
+async def trigger_cleanup():
+    """Manually trigger file cleanup"""
+    try:
+        controller = FileController()
+        from controllers.file_controller import BackgroundCleaner
+
+        cleaner = BackgroundCleaner(controller)
+        await cleaner.cleanup_expired_files()
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "success": True,
+                "message": "Cleanup completed",
+                "timestamp": datetime.utcnow().isoformat(),
+            },
+        )
+
+    except Exception as e:
+        logger.error(f"Manual cleanup failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cleanup failed"
+        )

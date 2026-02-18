@@ -39,12 +39,10 @@ class FileCategory(str, Enum):
 class Files(BaseModel):
     file_id: UUID = Field(default_factory=uuid4)
 
-    # Ownership
     owner_type: OwnerType
     owner_id: UUID
     sharing_session_id: UUID
 
-    # File Info
     original_name: str
     mime_type: str
     size: int
@@ -52,15 +50,12 @@ class Files(BaseModel):
     storage_key: str
     file_category: FileCategory
 
-    # Upload tracking
     upload_status: FileStatus = FileStatus.pending
 
-    # Security / lifecycle
     expires_at: Optional[datetime]
     is_deleted: bool = False
     deleted_at: Optional[datetime]
 
-    # Stats
     download_count: int = 0
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
