@@ -59,7 +59,6 @@ class SharingController:
 
             sender_name = name.get("guest_name", "guest_user")
 
-            print("GUEST SESSION NAME = ", name)
             if not session_id:
                 raise HTTPException(
                     status_code=401, detail="No authentication or guest session found"
