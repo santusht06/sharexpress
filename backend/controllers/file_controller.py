@@ -25,7 +25,6 @@ from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 from botocore.exceptions import ClientError, BotoCoreError
 import magic  # python-magic for real mime detection
-
 from core.database import get_db
 from core.s3_config import (
     s3_client,
@@ -34,6 +33,7 @@ from core.s3_config import (
     generate_presigned_upload_url,
 )
 from core.config import MINIO_BUCKET
+from core.permission_engine import PermissionEngine
 
 
 logger = logging.getLogger(__name__)
@@ -673,7 +673,6 @@ class FileController:
             actual_size = metadata.get("ContentLength", file_info.get("size", 0))
             etag = metadata.get("ETag", "").strip('"')
 
-            # Prepare document
             return {
                 "file_id": file_info["file_id"],
                 "sharing_session_id": session["sharing_session_ID"],
@@ -696,7 +695,6 @@ class FileController:
         if not docs:
             return 0
 
-        # Insert in batches of 100 for better performance
         BATCH_SIZE = 100
         saved_count = 0
 
@@ -705,9 +703,10 @@ class FileController:
             try:
                 result = await self.db.files.insert_many(
                     batch,
-                    ordered=False,  # Continue on error
+                    ordered=False,
                 )
                 saved_count += len(result.inserted_ids)
+                ""
             except Exception as e:
                 logger.error(f"Batch insert failed: {e}", exc_info=True)
                 # Try to save individually
@@ -921,7 +920,7 @@ class BackgroundCleaner:
         while self.running:
             try:
                 await self.cleanup_expired_files()
-                await asyncio.sleep(3600)  # Run every hour
+                await asyncio.sleep(3600)
             except Exception as e:
                 logger.error(f"Background cleanup error: {e}", exc_info=True)
                 await asyncio.sleep(60)
@@ -931,7 +930,6 @@ class BackgroundCleaner:
         RETENTION_DAYS = 30
         cutoff_date = datetime.utcnow() - timedelta(days=RETENTION_DAYS)
 
-        # Find expired files
         expired_files = await self.controller.db.files.find(
             {"created_at": {"$lt": cutoff_date}, "is_deleted": False}
         ).to_list(length=1000)
@@ -941,13 +939,11 @@ class BackgroundCleaner:
 
         logger.info(f"Cleaning up {len(expired_files)} expired files")
 
-        # Delete from storage
         cleanup_tasks = [
             self.controller._cleanup_storage(f["storage_key"]) for f in expired_files
         ]
         await asyncio.gather(*cleanup_tasks, return_exceptions=True)
 
-        # Mark as deleted in database
         file_ids = [f["file_id"] for f in expired_files]
         await self.controller.db.files.update_many(
             {"file_id": {"$in": file_ids}},

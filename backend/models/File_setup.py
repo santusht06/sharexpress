@@ -12,6 +12,7 @@
 #
 from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Optional, Any
+from enum import Enum
 
 
 class UploadInitItem(BaseModel):
@@ -34,6 +35,32 @@ class CompleteUploadItem(BaseModel):
 
 class CompleteUploadRequest(BaseModel):
     files: List[CompleteUploadItem]
+
+
+class Action(str, Enum):
+    VIEW = "view"
+    DOWNLOAD = "download"
+    EDIT = "edit"
+    DELETE = "delete"
+    UPLOAD = "upload"
+    SHARE = "share"
+
+
+class Role(str, Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    EDITOR = "editor"
+    VIEWER = "viewer"
+
+
+class SessionParticipant(BaseModel):
+    user_id: str
+    role: Role
+
+
+class FilePermission(BaseModel):
+    user_id: str
+    allowed_actions: List[Action]
 
 
 class FileMetadata(BaseModel):
@@ -106,6 +133,7 @@ class CompletedFile(BaseModel):
     filename: str
     size: int = Field(..., gt=0)
     content_type: Optional[str] = None
+    file_permissions: Optional[List[FilePermission]] = None
 
     class Config:
         json_schema_extra = {

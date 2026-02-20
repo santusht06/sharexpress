@@ -15,6 +15,7 @@ from enum import Enum
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
+from models.File_setup import Role
 
 
 class ParticipantsType(str, Enum):
@@ -40,6 +41,8 @@ class SharingSession(BaseModel):
     sender_name: str
     sender_ID: str
     sender_type: ParticipantsType
+
+    # ROLE
 
     receiver_ID: Optional[str] = None
     receiver_type: ParticipantsType

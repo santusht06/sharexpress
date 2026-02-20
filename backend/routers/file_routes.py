@@ -40,13 +40,10 @@ from models.File_setup import (
     HealthCheckResponse,
 )
 
-# Logger
 logger = logging.getLogger(__name__)
 
-# Router
 router = APIRouter(prefix="/files", tags=["files"])
 
-# Rate limiter (IP-based)
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -64,13 +61,6 @@ async def init_upload(
     """Initialize file upload with presigned URLs"""
     try:
         controller = FileController()
-
-        # Check upload permission
-        if not session.get("permissions", {}).get("can_upload", True):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Upload permission denied for this session",
-            )
 
         logger.info(
             f"Init upload request: session={session.get('sharing_session_ID')}, "
@@ -190,7 +180,6 @@ async def list_session_files(
     include_deleted: bool = Query(default=False, description="Include deleted files"),
     session: Dict[str, Any] = Depends(verify_x_sharing_token),
 ):
-    """List all files in a session"""
     try:
         controller = FileController()
 
