@@ -20,7 +20,7 @@ const Hero = () => {
         <p className="text-[#B8B8B8] text-xl">Built for scale.</p>
 
         <div className="mt-8 flex justify-center">
-          <WButton text={"Share your first file securely"} />
+          <WButton text={"Share your files securely"} />
         </div>
       </div>
     </div>

@@ -12,9 +12,12 @@ const Navbar = () => {
           className="h-12 object-contain"
         />
 
-        <div className="absolute left-1/2 -translate-x-1/2">
+        <div className="absolute left-1/2 -translate-x-1/2 flex gap-4  ">
           <h1 className="text-[#B8B8B8] hover:text-[#909090] transition-all duration-150 cursor-pointer font-[400]">
             How it Works
+          </h1>
+          <h1 className="text-[#B8B8B8] hover:text-[#909090] transition-all duration-150 cursor-pointer font-[400]">
+            Docs
           </h1>
         </div>
 
