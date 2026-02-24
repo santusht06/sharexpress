@@ -9,7 +9,7 @@ const Hero2 = () => {
           <h1 className="text-start text-[48px] text-white  leading-[1.1]  ">
             Transfer files securely between devices.
           </h1>
-          <div className="w-fit mt-8 ">
+          <div className="w-fit mt-9 ">
             <WButton text={"Share your files securely"} />
           </div>
         </div>
