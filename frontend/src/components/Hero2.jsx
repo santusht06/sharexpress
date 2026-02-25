@@ -1,5 +1,6 @@
 import React from "react";
 import WButton from "./WButton";
+import HeroCard from "./HeroCard";
 
 const Hero2 = () => {
   return (
