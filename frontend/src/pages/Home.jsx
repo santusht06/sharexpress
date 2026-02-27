@@ -13,6 +13,7 @@ const Home = () => {
       <Hero2 />
       <HeroCard />
       <Hero3 />
+      <Hero4 />
     </>
   );
 };
