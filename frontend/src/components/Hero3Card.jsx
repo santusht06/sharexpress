@@ -9,7 +9,9 @@ const Hero3Card = (props) => {
     <>
       <div className="w-fit h-20 ">
         <div className="w-fit  gap-5 flex ">
-          <div className="w-[56px] h-[56px]  bg-[#1F1F1F] rounded-xl  "></div>
+          <div className="w-[56px] h-[56px]  bg-[#1F1F1F] rounded-xl flex justify-center items-center   ">
+            <h1 className="text-white text-center text-2xl ">{data.icon}</h1>
+          </div>
           <div className="max-w-2/3">
             <div className=" ">
               <h1 className="text-[17px] text-white font-[500] ">
