@@ -1,7 +1,46 @@
 import React from "react";
 import Hero3Card from "./Hero3Card";
+import { IoShieldCheckmarkSharp } from "react-icons/io5";
+import { IoQrCodeSharp } from "react-icons/io5";
+import { FaLock } from "react-icons/fa";
+import { FaClockRotateLeft } from "react-icons/fa6";
+import { FaCloud } from "react-icons/fa";
+
+import { MdOutlineLocalActivity } from "react-icons/md";
 
 const Hero3 = () => {
+  let data = [
+    {
+      icon: <IoShieldCheckmarkSharp />,
+      heading: "Session Isolation",
+      subheading: "Dedicated transfer channels per sharing session.",
+    },
+    {
+      icon: <IoQrCodeSharp />,
+      heading: "QR Pairing",
+      subheading: "Instant device pairing with time-limited tokens.",
+    },
+    {
+      icon: <FaLock />,
+      heading: "Permission Engine",
+      subheading: "Role-based file access enforced at API level.",
+    },
+    {
+      icon: <FaClockRotateLeft />,
+      heading: "Expiry Control",
+      subheading: "Automatic session and file expiration policies.",
+    },
+    {
+      icon: <FaCloud />,
+      heading: "S3-Backed Storage",
+      subheading: "Secure object storage with integrity validation.",
+    },
+    {
+      icon: <MdOutlineLocalActivity />,
+      heading: "Resilient Upload Engine",
+      subheading: "Retry logic and circuit breaker protection.",
+    },
+  ];
   return (
     <>
       <div className="w-full h-full flex justify-center mb-20 ">
@@ -15,7 +54,11 @@ const Hero3 = () => {
         </div>
       </div>
 
-      <Hero3Card />
+      <div className="grid grid-cols-3 gap-16  ">
+        {data.map((item, index) => (
+          <Hero3Card key={index} data={item} />
+        ))}
+      </div>
     </>
   );
 };
