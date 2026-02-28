@@ -7,7 +7,12 @@ import { IoLayers } from "react-icons/io5";
 import { FaKey } from "react-icons/fa6";
 import { FaClockRotateLeft } from "react-icons/fa6";
 import { BsFileTextFill } from "react-icons/bs";
-
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import { motion } from "framer-motion";
 const Hero4 = () => {
   const hero4Data = [
     {
@@ -47,20 +52,64 @@ const Hero4 = () => {
       subheading: "Tracked actions with timestamps.",
     },
   ];
+
+  const settings = {
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    infinite: true,
+
+    arrows: false,
+    dots: false,
+
+    autoplay: true,
+    autoplaySpeed: 0,
+    speed: 4000,
+    cssEase: "linear",
+
+    pauseOnHover: false,
+    pauseOnFocus: false,
+
+    draggable: false,
+    swipe: false,
+    touchMove: false,
+  };
   return (
     <>
-      <div className="w-full h-full  flex flex-col justify-center gap-20   ">
+      <div className="w-full py-32 flex flex-col gap-20">
         <div className="flex justify-center">
-          <div className="max-w-xl  ">
-            <h1 className="text-white text-center text-[48px] font-[500] leading-[1.1] ">
+          <div className="max-w-xl">
+            <h1 className="text-white text-center text-[48px] font-[500] leading-[1.1]">
               Edit, share, control precisely.
             </h1>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-16  ">
-          {hero4Data.map((item) => (
-            <Hero4Card key={item.id} data={item} />
-          ))}
+
+        <div className="relative overflow-hidden">
+          <div className="pointer-events-none absolute left-0 top-0 h-full w-64 z-30">
+            <div className="h-full w-full bg-gradient-to-r from-black/90 via-black/50 via-black/20 to-transparent" />
+          </div>
+
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-64 z-30">
+            <div className="h-full w-full bg-gradient-to-l from-black/90 via-black/50 via-black/20 to-transparent" />
+          </div>
+
+          <div className="mask-container">
+            <motion.div
+              className="flex gap-8 w-max"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{
+                repeat: Infinity,
+                duration: 25,
+                ease: "linear",
+              }}
+            >
+              {hero4Data.map((item, index) => (
+                <div key={index} className="min-w-[320px]">
+                  <Hero4Card data={item} />
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </div>
     </>
