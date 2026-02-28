@@ -4,7 +4,7 @@ import WButton from "./WButton";
 
 const Navbar = () => {
   return (
-    <div className="fixed w-full bg-black border-b-[0.7px]  border-white/10 z-50">
+    <div className="fixed w-full bg-black/80 backdrop-blur-3xl border-b-[0.7px]  border-white/10 z-50">
       <div className="relative flex items-center justify-between px-40 py-5">
         <img
           src={LOGOw}
