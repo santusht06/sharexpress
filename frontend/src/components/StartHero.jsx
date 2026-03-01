@@ -2,6 +2,39 @@ import React from "react";
 import StartHeroCard from "./StartHeroCard";
 
 const StartHero = () => {
+  const accessModes = [
+    {
+      id: 1,
+      badge: "Free",
+      title: "Guest Mode",
+      subtitle: "Instant sharing. No account required.",
+      buttonText: "Start as Guest",
+      highlight: false,
+      features: [
+        "Temporary sharing session",
+        "QR-based device pairing",
+        "Auto-expiring files",
+        "Time-limited uploads",
+        "Basic download access",
+      ],
+    },
+    {
+      id: 2,
+      badge: "Recommended",
+      title: "Registered Mode",
+      subtitle: "Full control. Persistent workspace.",
+      buttonText: "Create Account",
+      highlight: true,
+      features: [
+        "Persistent sharing sessions",
+        "Role-based permission engine",
+        "Single editor lock mode",
+        "Advanced expiry controls",
+        "Session history & tracking",
+        "Personal storage quota",
+      ],
+    },
+  ];
   return (
     <>
       <div className="w-full h-screen  flex flex-col justify-center gap-20   ">
