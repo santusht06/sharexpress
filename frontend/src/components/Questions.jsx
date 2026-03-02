@@ -7,7 +7,7 @@ const Questions = () => {
       id: 1,
       question: "How does Sharexpress work?",
       answer:
-        "ShareXpress creates isolated sharing sessions between devices. Files are uploaded securely and accessed through permission-controlled, time-limited sessions.",
+        "Sharexpress creates isolated sharing sessions between devices. Files are uploaded securely and accessed through permission-controlled, time-limited sessions.",
     },
     {
       id: 2,
@@ -47,7 +47,7 @@ const Questions = () => {
     },
     {
       id: 8,
-      question: "Does ShareXpress support real-time updates?",
+      question: "Does Sharexpress support real-time updates?",
       answer:
         "Yes. Registered sessions can leverage real-time updates for editing locks and session state changes.",
     },

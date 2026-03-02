@@ -63,7 +63,7 @@ const Images_Float = () => {
     <div className="relative w-screen h-screen bg-black overflow-hidden ">
       {/* BACKGROUND – subtle, blurry, slow */}
       <Marquee
-        images={[cloud, clouds, word, xls, zip]}
+        images={[word, cloud, xls, zip, clouds]}
         size="160px"
         gap="130px"
         speed={140}
