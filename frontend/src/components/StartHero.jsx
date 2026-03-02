@@ -37,7 +37,7 @@ const StartHero = () => {
   ];
   return (
     <>
-      <div className="w-full h-screen  flex flex-col justify-center gap-20   ">
+      <div className="w-full h-screen  flex flex-col justify-center gap-0   ">
         <div className="flex justify-center">
           <div className="max-w-md  ">
             <h1 className="text-white text-center text-[48px] font-[500] leading-[1.1] ">

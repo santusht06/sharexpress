@@ -53,26 +53,6 @@ const Hero4 = () => {
     },
   ];
 
-  const settings = {
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    infinite: true,
-
-    arrows: false,
-    dots: false,
-
-    autoplay: true,
-    autoplaySpeed: 0,
-    speed: 4000,
-    cssEase: "linear",
-
-    pauseOnHover: false,
-    pauseOnFocus: false,
-
-    draggable: false,
-    swipe: false,
-    touchMove: false,
-  };
   return (
     <>
       <div className="w-full py-32 flex flex-col gap-20">
