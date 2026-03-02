@@ -20,7 +20,7 @@ const StartHero = () => {
     },
     {
       id: 2,
-      badge: "Recommended",
+      badge: "Recommended*",
       title: "Registered Mode",
       subtitle: "Full control. Persistent workspace.",
       buttonText: "Create Account",
@@ -48,7 +48,11 @@ const StartHero = () => {
             </h3>
           </div>
         </div>
-        <StartHeroCard />
+        <div className="flex justify-between gap-10 mt-20">
+          {accessModes.map((mode) => (
+            <StartHeroCard key={mode.id} data={mode} />
+          ))}
+        </div>{" "}
       </div>
     </>
   );
