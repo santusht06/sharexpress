@@ -7,6 +7,8 @@ import Hero3 from "../components/Hero3";
 import Hero4 from "../components/Hero4";
 import StartHero from "../components/StartHero";
 import Images_Float from "../components/Images_Float";
+import QuestionCard from "../components/QuestionCard";
+import Questions from "../components/Questions";
 
 const Home = () => {
   return (
@@ -24,6 +26,7 @@ const Home = () => {
         <Hero3 />
         <Hero4 />
         <StartHero />
+        <Questions />
       </div>
     </>
   );
