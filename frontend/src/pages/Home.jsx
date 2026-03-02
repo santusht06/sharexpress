@@ -6,18 +6,28 @@ import HeroCard from "../components/HeroCard";
 import Hero3 from "../components/Hero3";
 import Hero4 from "../components/Hero4";
 import StartHero from "../components/StartHero";
+import Images_Float from "../components/Images_Float";
+import QuestionCard from "../components/QuestionCard";
 import Questions from "../components/Questions";
 
 const Home = () => {
   return (
     <>
-      <Hero />
-      <Hero2 />
-      <HeroCard />
-      <Hero3 />
-      <Hero4 />
-      <StartHero />
-      <Questions />
+      <div className=" h-fit min-w-screen bg-black  px-40 py-5  ">
+        <Hero />
+      </div>
+      <div className=" h-2/3 min-w-screen bg-black  mb-20  ">
+        <Images_Float />
+      </div>
+
+      <div className=" min-h-screen min-w-screen bg-black  px-40 py-5  ">
+        <Hero2 />
+        <HeroCard />
+        <Hero3 />
+        <Hero4 />
+        <StartHero />
+        <Questions />
+      </div>
     </>
   );
 };

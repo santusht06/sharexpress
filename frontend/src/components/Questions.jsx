@@ -5,7 +5,7 @@ const Questions = () => {
   const faqData = [
     {
       id: 1,
-      question: "How does ShareXpress work?",
+      question: "How does Sharexpress work?",
       answer:
         "ShareXpress creates isolated sharing sessions between devices. Files are uploaded securely and accessed through permission-controlled, time-limited sessions.",
     },
@@ -37,7 +37,7 @@ const Questions = () => {
       id: 6,
       question: "Can I control who downloads or edits files?",
       answer:
-        "Yes. ShareXpress uses a granular permission engine that allows role-based control over viewing, downloading, editing, and deleting.",
+        "Yes. Sharexpress uses a granular permission engine that allows role-based control over viewing, downloading, editing, and deleting.",
     },
     {
       id: 7,
