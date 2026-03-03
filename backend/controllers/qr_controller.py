@@ -75,14 +75,13 @@ class Qr_controller:
         log_entry = {
             "log_id": str(uuid4()),
             "qr_id": qr_id,
-            "action": action,  # verify, resolve, scan, etc.
+            "action": action,
             "success": success,
             "client_info": client_info,
             "timestamp": datetime.utcnow(),
             "details": details or {},
         }
 
-        # Store with TTL (auto-delete after 90 days)
         await db.qr_access_log.insert_one(log_entry)
 
     @staticmethod
@@ -105,7 +104,6 @@ class Qr_controller:
                 is_permanent = True
                 expires_at = None
 
-                # Check if user already has an active QR code
                 existing_qr = await db.qr_codes.find_one(
                     {
                         "owner_type": "user",
@@ -115,7 +113,6 @@ class Qr_controller:
                 )
 
                 if existing_qr:
-                    # Return existing QR code
                     return {
                         "success": True,
                         "qr_id": existing_qr["qr_id"],
