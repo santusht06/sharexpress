@@ -22,7 +22,7 @@ import React from "react";
  * legally robust privacy disclosures.
  *
  * @component
- * @returns {JSX.Element} Privacy policy page
+ * @returns {JSX.Element}
  */
 const PrivacyPolicyPage = () => {
   const LAST_UPDATED = "March 3, 2026";
