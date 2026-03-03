@@ -34,7 +34,10 @@ const Navbar = () => {
         </div>
 
         <div className="flex gap-3 items-center">
-          <div className=" transition-all text-white duration-150 ease-in-out cursor-pointer hover:border-white/30     bg-transparent px-5 py-2   rounded-4xl border-[1px] border-white/20 text-center text-md font-[400]  ">
+          <div
+            onClick={() => navigate("/signin")}
+            className=" transition-all text-white duration-150 ease-in-out cursor-pointer hover:border-white/30     bg-transparent px-5 py-2   rounded-4xl border-[1px] border-white/20 text-center text-md font-[400]  "
+          >
             Sign in
           </div>
 
