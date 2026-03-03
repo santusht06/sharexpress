@@ -1,12 +1,15 @@
 import React from "react";
 import LOGOw from "../../../DOCUMENTS/logo.PNG";
 import WButton from "./WButton";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   return (
     <div className="fixed w-full bg-black/80 backdrop-blur-3xl border-b-[0.7px]  border-white/10 z-50">
       <div className="relative flex items-center justify-between px-40 py-5">
         <img
+          onClick={() => navigate("/")}
           src={LOGOw}
           alt="sharexpress logo"
           className="h-12 object-contain"
