@@ -55,10 +55,16 @@ const Footer = () => {
               >
                 Privacy Policy
               </li>
-              <li className="hover:text-[#909090] cursor-pointer transition">
+              <li
+                onClick={() => navigate("/terms")}
+                className="hover:text-[#909090] cursor-pointer transition"
+              >
                 Terms of Service
               </li>
-              <li className="hover:text-[#909090] cursor-pointer transition">
+              <li
+                onClick={() => navigate("/security")}
+                className="hover:text-[#909090] cursor-pointer transition"
+              >
                 Security Policy
               </li>
             </ul>
