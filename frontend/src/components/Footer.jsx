@@ -1,7 +1,9 @@
 import React from "react";
 import LOGOw from "../../../DOCUMENTS/logo.PNG";
+import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
+  const navigate = useNavigate();
   return (
     <footer className="w-screen  border-white/10 mt-32">
       <div className=" mx-auto px-40 py-20 flex justify-between">
@@ -18,7 +20,7 @@ const Footer = () => {
           </p>
 
           <p className="text-white/40 text-sm">
-            © {new Date().getFullYear()} ShareXpress.
+            © {new Date().getFullYear()} Sharexpress.
           </p>
         </div>
 
@@ -47,7 +49,10 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-white font-medium">Legal</h3>
             <ul className="space-y-3 text-[#B8B8B8] text-sm">
-              <li className="hover:text-[#909090] cursor-pointer transition">
+              <li
+                onClick={() => navigate("/privacy")}
+                className="hover:text-[#909090] cursor-pointer transition"
+              >
                 Privacy Policy
               </li>
               <li className="hover:text-[#909090] cursor-pointer transition">

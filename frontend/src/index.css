@@ -5,7 +5,9 @@ html, body, #root {
   background-color: #000;
 }
 
-
+html {
+  scroll-behavior: smooth;
+}
 
 .mask-container {
   -webkit-mask-image: linear-gradient(
