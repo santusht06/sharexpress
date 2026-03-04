@@ -2,7 +2,7 @@
 # Core Framework
 # =========================
 fastapi
-uvicorn
+uvicorn[standard]
 
 # =========================
 # Environment Variables
@@ -25,9 +25,10 @@ email-validator
 # =========================
 # Authentication & Security
 # =========================
-python-jose
+python-jose[cryptography]
 cryptography
 itsdangerous
+passlib[bcrypt]
 
 # =========================
 # OAuth (Google)
@@ -41,6 +42,25 @@ httpx
 fastapi-mail
 
 # =========================
-# Utilities
+# Redis (OTP / sessions / rate limit)
+# =========================
+redis
+
+# =========================
+# Object Storage (S3 / MinIO)
+# =========================
+boto3
+
+# =========================
+# File handling / MIME detection
 # =========================
 python-multipart
+python-magic
+
+# =========================
+# Utilities
+# =========================
+python-dateutil
+
+# RATE LIMITING
+slowapi
