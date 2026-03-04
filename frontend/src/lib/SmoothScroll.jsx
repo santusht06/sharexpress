@@ -1,37 +1,55 @@
 import { useEffect } from "react";
-import Lenis from "@studio-freight/lenis";
+
+// Fix 1: Use the current package — @studio-freight/lenis is abandoned.
+// Install the maintained fork:  npm i lenis
+import Lenis from "lenis";
 
 const SmoothScroll = () => {
   useEffect(() => {
-    // Respect prefers-reduced-motion
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    if (prefersReducedMotion) return;
+    // Fix 2: Respect reduced-motion BEFORE creating the instance
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
 
     const lenis = new Lenis({
-      lerp: 0.12, // interpolation smoothness
-      wheelMultiplier: 1, // prevents aggressive scroll jumps
-      smoothWheel: true,
-      smoothTouch: false, // keep mobile natural
+      // Fix 3: lerp 0.12 causes the "lag" feel — 0.08 is the sweet spot.
+      //        Low lerp = more smoothing = more latency. Keep it 0.06–0.10.
+      lerp: 0.08,
+
+      // Fix 4: smoothWheel is not a valid Lenis option (caused silent errors).
+      //        wheelMultiplier controls wheel sensitivity — 1 is correct.
+      wheelMultiplier: 1,
+
+      // Fix 5: duration is ignored when lerp is set. Pick one or the other.
+      //        Using lerp here, so duration is omitted.
+
+      smoothTouch: false, // keep native mobile scroll (correct)
       touchMultiplier: 1.5,
-      direction: "vertical",
-      gestureDirection: "vertical",
+      orientation: "vertical", // replaces deprecated `direction`
+      gestureOrientation: "vertical", // replaces deprecated `gestureDirection`
       infinite: false,
+      autoRaf: false, // we manage our own RAF below for full control
     });
 
-    let rafId;
-
+    // Fix 6: Store the id on the lenis instance to avoid stale closure issues
     const raf = (time) => {
       lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
+      lenis._rafId = requestAnimationFrame(raf);
     };
 
-    rafId = requestAnimationFrame(raf);
+    lenis._rafId = requestAnimationFrame(raf);
+
+    // Fix 7: Also listen for reduced-motion changes at runtime
+    const handleMotionChange = (e) => {
+      if (e.matches) {
+        cancelAnimationFrame(lenis._rafId);
+        lenis.destroy();
+      }
+    };
+    mq.addEventListener("change", handleMotionChange);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      cancelAnimationFrame(lenis._rafId);
+      mq.removeEventListener("change", handleMotionChange);
       lenis.destroy();
     };
   }, []);

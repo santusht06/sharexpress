@@ -130,7 +130,6 @@ class Qr_controller:
                     }
 
             else:
-                # Guest session
                 session = await get_or_create_guest_session(request, response)
                 owner_name = session["guest_name"]
                 owner_type = "session"
@@ -138,16 +137,13 @@ class Qr_controller:
                 is_permanent = False
                 expires_at = datetime.utcnow() + timedelta(minutes=10)
 
-                # Delete old guest session QR codes
                 await db.qr_codes.delete_many(
                     {"owner_type": "session", "owner_id": owner_id}
                 )
 
-            # Generate secure QR token
             qr_token = generate_qr_token()
             qr_id = str(uuid4())
 
-            # Generate verification secret for additional security
             verification_secret = secrets.token_urlsafe(32)
 
             qr_data = {
@@ -164,14 +160,12 @@ class Qr_controller:
                 "expires_at": expires_at,
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
-                # Security features
-                "one_time_use": False,  # Can be enabled per use case
+                "one_time_use": False,
                 "max_scans": None,  # Unlimited by default
                 "scan_count": 0,
                 "unique_scanners": [],  # Track unique scanner hashes
                 "last_scanned_at": None,
                 "revoked_at": None,
-                # Privacy and security
                 "created_by_ip_hash": client_info["ip_hash"],
                 "allowed_ip_patterns": [],  # Optional: restrict by IP
                 "require_authentication": False,  # Optional: require login to scan
@@ -198,7 +192,7 @@ class Qr_controller:
                 "qr_id": qr_id,
                 "qr_token": qr_token,
                 "owner_name": owner_name,
-                "verification_secret": verification_secret,  # Return only once
+                "verification_secret": verification_secret,
                 "owner_type": owner_type,
                 "is_permanent": is_permanent,
                 "is_active": True,
@@ -249,7 +243,6 @@ class Qr_controller:
                     detail="Too many verification attempts. Please try again later.",
                 )
 
-            # Find QR code
             qr_code = await db.qr_codes.find_one(
                 {"qr_token": qr_token},
                 {"_id": 0},
