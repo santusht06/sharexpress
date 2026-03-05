@@ -24,11 +24,9 @@ const LayoutWrapper = () => {
 const App = () => {
   return (
     <BrowserRouter>
-      <SmoothScroll />
       <ScrollToTop />
       <LayoutWrapper />
     </BrowserRouter>
   );
 };
-
 export default App;

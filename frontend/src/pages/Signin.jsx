@@ -66,6 +66,10 @@ const Signin = () => {
     setStep("otp");
   };
 
+  const handleGoogleSign = () => {
+    window.location.href = "http://localhost:8000/auth/google/login";
+  };
+
   return (
     <div className="min-h-screen w-screen bg-[#262626] flex items-center justify-center">
       <div className="w-[420px]">
@@ -102,7 +106,10 @@ const Signin = () => {
                     Welcome to Sharexpress
                   </h1>
 
-                  <button className="w-full cursor-pointer flex items-center justify-center gap-3 border border-white/10 rounded-4xl py-2.5 text-sm text-white hover:bg-white/5 transition">
+                  <button
+                    onClick={handleGoogleSign}
+                    className="w-full cursor-pointer flex items-center justify-center gap-3 border border-white/10 rounded-4xl py-2.5 text-sm text-white hover:bg-white/5 transition"
+                  >
                     <img src={google} alt="" className="h-5" />
                     Continue with Google
                   </button>
