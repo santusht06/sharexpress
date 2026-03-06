@@ -159,7 +159,6 @@ class SharingController:
                     "reciever_name": reciever_name,
                 }
 
-            # ❌ No active session → create new
             session_data = SharingSession(
                 qr_token=qr_token.qr_token,
                 sharing_token=new_sharing_token,

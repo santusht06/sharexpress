@@ -41,7 +41,9 @@ const Navbar = () => {
             Sign in
           </div>
 
-          <WButton text={"Get Started"} />
+          <button onClick={() => navigate("/Dashboard")}>
+            <WButton text={"Get Started"} />
+          </button>
         </div>
       </div>
     </div>
