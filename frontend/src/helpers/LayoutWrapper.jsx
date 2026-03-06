@@ -7,7 +7,7 @@ import ScrollToTop from "../helpers/ScrollToTop";
 const LayoutWrapper = () => {
   const location = useLocation();
 
-  const hideLayout = ["/signin", "/Dashboard"].includes(location.pathname);
+  const hideLayout = ["/signin", "/dashboard"].includes(location.pathname);
 
   return (
     <>
