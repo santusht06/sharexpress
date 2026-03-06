@@ -15,7 +15,7 @@ export const VerifyOTP = createAsyncThunk(
 
   async ({ data }) => {
     const response = await api.post("auth/verifyOTP", data);
-    return data;
+    return response.data;
   },
 );
 
