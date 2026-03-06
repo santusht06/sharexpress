@@ -6,6 +6,7 @@ import TermsOfServicePage from "../pages/TermsOfServicePage";
 import SecurityPolicyPage from "../pages/SecurityPolicyPage";
 import Signin from "../pages/Signin";
 import Dashboard from "../pages/Dashboard";
+import NotFound from "../components/NotFound";
 
 const AppRoutes = () => {
   return (
@@ -16,6 +17,7 @@ const AppRoutes = () => {
       <Route path="/security" element={<SecurityPolicyPage />} />
       <Route path="/signin" element={<Signin />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
