@@ -39,6 +39,15 @@ export const getCurrentUser = createAsyncThunk(
   },
 );
 
+export const updateUser = createAsyncThunk(
+  "auth/upate",
+
+  async (name) => {
+    const response = api.patch("/auth/update", name);
+    return response;
+  },
+);
+
 const authSlice = createSlice({
   name: "auth",
 

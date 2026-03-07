@@ -21,3 +21,7 @@ class User_profile(BaseModel):
     user_ID: UUID
     display_name: Optional[str]
     avatarURL: Optional[str]
+
+
+class updateUser(BaseModel):
+    name: str

@@ -13,6 +13,7 @@ const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const location = useLocation();
   const navigate = useNavigate();
+  const isActive = (path) => location.pathname === path;
 
   const [isOpenProfile, setIsOpenProfile] = useState(false);
 
@@ -68,14 +69,24 @@ const Dashboard = () => {
           <div className="flex flex-col gap-1">
             <button
               onClick={() => navigate("/dashboard")}
-              className="text-left bg-[#1a1a1a] rounded-lg px-4 py-2 text-sm text-white"
+              className={`text-left rounded-md px-4 py-2 text-sm transition
+                  ${
+                    isActive("/dashboard")
+                      ? "bg-[#1a1a1a] text-white"
+                      : "text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white"
+                  }`}
             >
               Files
             </button>
 
             <button
               onClick={() => navigate("/dashboard/history")}
-              className="text-left rounded-lg px-4 py-2 text-sm text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white transition"
+              className={`text-left rounded-md px-4 py-2 text-sm transition
+                  ${
+                    isActive("/dashboard/history")
+                      ? "bg-[#1a1a1a] text-white"
+                      : "text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white"
+                  }`}
             >
               History
             </button>

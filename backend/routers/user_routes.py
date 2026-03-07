@@ -14,6 +14,7 @@ from fastapi import APIRouter, Response, Request, Depends
 from models.user_model import User, OTPverify
 from controllers.user_controller import UserController
 from utils.JWT import check_auth_middleware, check_token
+from models.user_profiles import updateUser
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -39,6 +40,11 @@ async def verify_otp(
 @router.get("/google/login")
 async def google_login(request: Request):
     return await UserController.redirect_to_uri(request)
+
+
+@router.patch("/update")
+async def update_user(name: updateUser, user=Depends(check_auth_middleware)):
+    return await UserController.update_user_name(user, name)
 
 
 @router.get("/google/callback", name="google_callback")

@@ -23,7 +23,7 @@ from utils.google_auth import oauth
 from fastapi.responses import RedirectResponse
 from authlib.integrations.base_client.errors import OAuthError
 from utils.random_name_for_guest import get_random_names_for_users
-
+from models.user_profiles import updateUser
 
 db = get_db()
 
@@ -270,6 +270,30 @@ class UserController:
         except Exception as e:
             print(f"Error in google_callback: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
+
+    @staticmethod
+    async def update_user_name(user, name: updateUser):
+        try:
+            user_id = user.get("user_id")
+
+            if not name.name.strip():
+                raise HTTPException(status_code=400, detail="Name cannot be empty")
+
+            result = await db.user.update_one(
+                {"user_id": user_id},
+                {"$set": {"name": name.name, "updated_at": datetime.utcnow()}},
+            )
+
+            if result.matched_count == 0:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            return {"message": "Username updated successfully", "success": True}
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
 
     @staticmethod
     async def Logout_user(response: Response, request: Request):
