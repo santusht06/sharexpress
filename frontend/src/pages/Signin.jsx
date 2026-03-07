@@ -75,7 +75,7 @@ const Signin = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Your email address"
-                    className="mt-1 w-full bg-[#1e1e1e] border border-white/10 rounded-4xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#B8B8B8]"
+                    className="mt-1 w-full bg-[#1e1e1e] border border-white/10 rounded-4xl px-4 py-3 text-sm text-white focus:outline-none transition-all duration-300 ease-in-out focus:border-[#B8B8B8]"
                   />
                 </div>
 
