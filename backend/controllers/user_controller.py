@@ -200,6 +200,7 @@ class UserController:
             email = user_info.get("email")
             google_sub = user_info.get("sub")
             name = user_info.get("name")
+            profile_pic = user_info.get("picture")
 
             if not email or not google_sub:
                 raise HTTPException(
@@ -215,6 +216,7 @@ class UserController:
                         "name": name,
                         "user_id": user_id,
                         "email": email,
+                        "picture": profile_pic,
                         "google_sub": google_sub,
                         "auth_provider": "GOOGLE",
                         "is_verified": True,
@@ -299,6 +301,8 @@ class UserController:
         safe_user = {
             "user_id": user.get("user_id"),
             "email": user.get("email"),
+            "picture": user.get("picture"),
+            "user_name": user.get("name"),
             "auth_provider": user.get("auth_provider"),
             "is_verified": user.get("is_verified"),
             "is_active": user.get("is_active"),
