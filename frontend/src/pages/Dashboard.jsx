@@ -3,7 +3,7 @@ import LOGOw from "../../../DOCUMENTS/logo.PNG";
 import { useSelector } from "react-redux";
 import { IoMdMore } from "react-icons/io";
 import SettingsProfile from "../components/SettingsProfile";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import DashboardFiles from "../components/Dashboard/DashboardFiles";
 import History from "../components/Dashboard/History";
@@ -11,6 +11,7 @@ import Profile from "../components/Dashboard/Profile";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [isOpenProfile, setIsOpenProfile] = useState(false);
@@ -20,10 +21,21 @@ const Dashboard = () => {
   const handleProfileOpening = () => {
     setIsOpenProfile((prev) => !prev);
   };
+
+  useEffect(() => {
+    setIsOpenProfile(false);
+  }, [location]);
   const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target)
+      ) {
         setIsOpenProfile(false);
       }
     };
@@ -34,7 +46,6 @@ const Dashboard = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   return (
     <div className="w-full h-screen bg-black flex">
       {/* SIDEBAR */}
@@ -62,14 +73,20 @@ const Dashboard = () => {
               Files
             </button>
 
-            <button className="text-left rounded-lg px-4 py-2 text-sm text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white transition">
+            <button
+              onClick={() => navigate("/dashboard/history")}
+              className="text-left rounded-lg px-4 py-2 text-sm text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white transition"
+            >
               History
             </button>
           </div>
         </div>
 
         {/* PROFILE */}
-        <div className="mt-auto border-t border-[#ffffff10] pt-4 relative">
+        <div
+          ref={dropdownRef}
+          className="mt-auto border-t border-[#ffffff10] pt-4 relative"
+        >
           <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#1a1a1a] transition">
             {/* AVATAR */}
             <div className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden bg-[#202020] flex items-center justify-center text-white text-sm font-medium">
@@ -93,6 +110,7 @@ const Dashboard = () => {
                 </p>
 
                 <IoMdMore
+                  ref={triggerRef}
                   onClick={handleProfileOpening}
                   className="text-[#9a9a9a] hover:text-white cursor-pointer"
                 />
