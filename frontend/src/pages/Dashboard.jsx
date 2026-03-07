@@ -1,18 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
 import LOGOw from "../../../DOCUMENTS/logo.PNG";
 import { useSelector } from "react-redux";
 import { IoMdMore } from "react-icons/io";
+import SettingsProfile from "../components/SettingsProfile";
+
+import { useRef, useEffect } from "react";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
 
-  console.log(user);
+  const [isOpenProfile, setIsOpenProfile] = useState(false);
 
   const initial = user?.user_name?.charAt(0)?.toUpperCase() || "U";
 
+  const handleProfileOpening = () => {
+    setIsOpenProfile((prev) => !prev);
+  };
+  const dropdownRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpenProfile(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className="w-screen h-screen bg-black flex">
-      <div className="w-[260px] h-full  px-5 py-5 flex flex-col">
+    <div className="w-full h-screen bg-black flex">
+      {/* SIDEBAR */}
+      <div className="w-[260px] h-screen fixed left-0 top-0 px-5 py-5 flex flex-col bg-black">
+        {/* LOGO */}
         <div className="flex items-center gap-2 mb-8">
           <img
             src={LOGOw}
@@ -21,6 +44,7 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* MENU */}
         <div>
           <h1 className="text-[11px] tracking-wide text-[#6b6b6b] uppercase mb-3">
             Uploads
@@ -37,8 +61,10 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="mt-auto border-t border-[#ffffff10] pt-4">
-          <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#1a1a1a] cursor-pointer transition">
+        {/* PROFILE */}
+        <div className="mt-auto border-t border-[#ffffff10] pt-4 relative">
+          <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#1a1a1a] transition">
+            {/* AVATAR */}
             <div className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden bg-[#202020] flex items-center justify-center text-white text-sm font-medium">
               {user?.picture ? (
                 <img
@@ -52,13 +78,17 @@ const Dashboard = () => {
               )}
             </div>
 
-            <div className="leading-tight flex-1">
+            {/* USER INFO */}
+            <div className="flex-1 leading-tight">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-white font-medium">
                   {user?.user_name || "User"}
                 </p>
 
-                <IoMdMore className="text-[#9a9a9a] hover:text-white" />
+                <IoMdMore
+                  onClick={handleProfileOpening}
+                  className="text-[#9a9a9a] hover:text-white cursor-pointer"
+                />
               </div>
 
               <p className="text-xs text-[#7a7a7a] truncate max-w-[150px]">
@@ -66,10 +96,18 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
+
+          {/* PROFILE DROPDOWN */}
+          {isOpenProfile && (
+            <div ref={dropdownRef} className="absolute bottom-0 left-55 z-50">
+              <SettingsProfile />
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex-1 p-3">
+      {/* MAIN CONTENT */}
+      <div className="ml-[260px] flex-1 p-3">
         <div className="w-full h-full bg-[#0d0d0d] rounded-xl border border-[#ffffff10] p-6">
           <h1 className="text-white text-lg font-medium">Dashboard</h1>
         </div>
