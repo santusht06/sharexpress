@@ -27,12 +27,24 @@ export const verifyOTP = createAsyncThunk(
   },
 );
 
+export const getCurrentUser = createAsyncThunk(
+  "auth/getCurrentUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/auth/me");
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "User not authenticated");
+    }
+  },
+);
+
 const authSlice = createSlice({
   name: "auth",
 
   initialState: {
     user: null,
-    token: localStorage.getItem("user") || null,
+    token: null,
     loading: false,
     error: null,
     isAuthenticated: false,
@@ -69,7 +81,6 @@ const authSlice = createSlice({
         state.loading = false;
 
         state.user = action.payload.user;
-        state.token = action.payload.token;
         state.isAuthenticated = true;
 
         localStorage.setItem("user", action.payload.token);
@@ -77,6 +88,24 @@ const authSlice = createSlice({
       .addCase(verifyOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      });
+
+    builder
+
+      .addCase(getCurrentUser.pending, (state) => {
+        state.loading = true;
+      })
+
+      .addCase(getCurrentUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      })
+
+      .addCase(getCurrentUser.rejected, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.isAuthenticated = false;
       });
   },
 });

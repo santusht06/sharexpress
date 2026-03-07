@@ -66,6 +66,13 @@ const Signin = () => {
   const inputRefs = useRef([]);
   const dispatch = useDispatch();
 
+  const { user } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user]);
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!email) return;
