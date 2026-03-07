@@ -1,26 +1,41 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
 import LOGOw from "../../../DOCUMENTS/logo.PNG";
 
 const Dashboard = () => {
   return (
-    <>
-      <div className="w-screen h-screen flex  fixed  ">
-        <div className="px-6 py-3">
-          <img
-            onClick={() => Navigate("/")}
-            src={LOGOw}
-            alt="sharexpress logo"
-            className="h-12 object-contain"
-          />
-        </div>
-        <div className=" w-screen h-screen flex items-center justify-end">
-          <div className="w-[82%] h-full flex justify-center items-center ">
-            <div className=" w-[99%] h-[98%] bg-[#0d0d0d] rounded-xl border-[0.8px] border-[#ffffff1a] "></div>
+    <div className="w-screen h-screen bg-black">
+      {/* LEFT SIDEBAR */}
+      <div className="fixed left-0 top-0 w-[260px] h-screen px-6 py-4  bg-black">
+        <img
+          src={LOGOw}
+          alt="sharexpress logo"
+          className="h-12 object-contain"
+        />
+
+        <div className="mt-8">
+          <h1 className="text-[#b3b3b3] text-xs">Uploads</h1>
+
+          <div className="mt-3 flex flex-col gap-1   ">
+            <div className="rounded-xl bg-[#202020] text-sm px-4 py-2 text-white">
+              Files
+            </div>
+
+            <div className="rounded-xl hover:bg-[#202020] text-sm px-4 py-2 text-white">
+              History
+            </div>
           </div>
         </div>
+
+        <div className="text-white fixed bottom-2 ">
+          <div></div>
+        </div>
       </div>
-    </>
+
+      {/* RIGHT CONTENT */}
+      <div className="ml-[260px] h-screen p-2">
+        <div className="w-full h-full bg-[#0d0d0d] rounded-xl border border-[#ffffff1a]"></div>
+      </div>
+    </div>
   );
 };
 
