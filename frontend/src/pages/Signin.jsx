@@ -4,6 +4,8 @@ import google from "../images/google.png";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import WButton from "../components/WButton";
+import { useDispatch, useSelector } from "react-redux";
+import { sendOTP, verifyOTP } from "../store/slices/authSlice";
 
 const TRANSITION = {
   duration: 1,
@@ -56,9 +58,13 @@ function AutoHeight({ children }) {
 
 const Signin = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState("email"); // "email" | "otp"
+  const [step, setStep] = useState("email");
   const [email, setEmail] = useState("");
-  const direction = step === "otp" ? 1 : -1; // 1 = forward, -1 = back
+  const [transactionID, settransactionID] = useState(null);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const direction = step === "otp" ? 1 : -1;
+  const inputRefs = useRef([]);
+  const dispatch = useDispatch();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -68,6 +74,39 @@ const Signin = () => {
 
   const handleGoogleSign = () => {
     window.location.href = "http://localhost:8000/auth/google/login";
+  };
+
+  const handleSendOTP = async () => {
+    const response = await dispatch(sendOTP(email));
+
+    settransactionID(response.payload.transactionID);
+  };
+  const handleOTPChange = (value, index) => {
+    if (!/^[0-9]?$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const VerifyOTPDATA = {
+    OTP: otp.join(""),
+    transactionID: transactionID,
+  };
+
+  console.log(VerifyOTPDATA);
+  const handleVerifyOTP = async () => {
+    const response = await dispatch(verifyOTP(VerifyOTPDATA));
+    console.log(response);
   };
 
   return (
@@ -134,7 +173,11 @@ const Signin = () => {
                         className="mt-1 w-full bg-[#1e1e1e] border border-white/10 rounded-4xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#B8B8B8] transition-all duration-300 ease-in-out   "
                       />
                     </div>
-                    <button type="submit" className="w-full mt-4">
+                    <button
+                      onClick={handleSendOTP}
+                      type="submit"
+                      className="w-full mt-4"
+                    >
                       <WButton text={"Continue"} />
                     </button>
                   </form>
@@ -176,16 +219,20 @@ const Signin = () => {
                   </p>
 
                   <div className="flex justify-center gap-3 mb-6">
-                    {[...Array(6)].map((_, i) => (
+                    {otp.map((digit, i) => (
                       <input
                         key={i}
+                        ref={(el) => (inputRefs.current[i] = el)}
+                        value={digit}
                         maxLength={1}
+                        onChange={(e) => handleOTPChange(e.target.value, i)}
+                        onKeyDown={(e) => handleKeyDown(e, i)}
                         className="w-10 h-12 text-center bg-[#1e1e1e] border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/30"
                       />
                     ))}
                   </div>
 
-                  <button className="w-full">
+                  <button onClick={handleVerifyOTP} className="w-full">
                     <WButton text={"Verify"} />
                   </button>
 

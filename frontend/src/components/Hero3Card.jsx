@@ -3,8 +3,6 @@ import React from "react";
 const Hero3Card = (props) => {
   const { data } = props;
 
-  console.log(data);
-
   return (
     <>
       <div className="w-fit h-20 ">
