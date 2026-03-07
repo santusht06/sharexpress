@@ -1,11 +1,16 @@
 import React from "react";
 import { FiUser, FiSettings, FiLogOut } from "react-icons/fi";
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const SettingsProfile = () => {
+  const navigate = useNavigate();
   return (
     <div className="w-48 bg-[#171717] border border-[#ffffff10] rounded-xl shadow-xl py-2 px-1 ">
-      <button className="w-full rounded-xl flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition">
+      <button
+        onClick={() => navigate("/dashboard/profile")}
+        className="w-full rounded-xl flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition"
+      >
         <FiUser size={16} />
         Profile
       </button>

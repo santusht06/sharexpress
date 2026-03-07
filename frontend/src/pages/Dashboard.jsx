@@ -3,11 +3,15 @@ import LOGOw from "../../../DOCUMENTS/logo.PNG";
 import { useSelector } from "react-redux";
 import { IoMdMore } from "react-icons/io";
 import SettingsProfile from "../components/SettingsProfile";
-
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
+import DashboardFiles from "../components/Dashboard/DashboardFiles";
+import History from "../components/Dashboard/History";
+import Profile from "../components/Dashboard/Profile";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
   const [isOpenProfile, setIsOpenProfile] = useState(false);
 
@@ -51,7 +55,10 @@ const Dashboard = () => {
           </h1>
 
           <div className="flex flex-col gap-1">
-            <button className="text-left bg-[#1a1a1a] rounded-lg px-4 py-2 text-sm text-white">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="text-left bg-[#1a1a1a] rounded-lg px-4 py-2 text-sm text-white"
+            >
               Files
             </button>
 
@@ -106,12 +113,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div className="ml-[260px] flex-1 p-3">
-        <div className="w-full h-full bg-[#0d0d0d] rounded-xl border border-[#ffffff10] p-6">
-          <h1 className="text-white text-lg font-medium">Files</h1>
-        </div>
-      </div>
+      {/* MAIN CONTENT   */}
+      <Routes>
+        <Route index element={<DashboardFiles />} />
+        <Route path="history" element={<History />} />
+        <Route path="profile" element={<Profile />} />
+      </Routes>
     </div>
   );
 };
