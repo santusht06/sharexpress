@@ -40,14 +40,16 @@ export const getCurrentUser = createAsyncThunk(
 );
 
 export const updateUser = createAsyncThunk(
-  "auth/upate",
-
-  async (name) => {
-    const response = api.patch("/auth/update", name);
-    return response;
+  "auth/updateUser",
+  async (name, { rejectWithValue }) => {
+    try {
+      const res = await api.patch("/auth/update", { name });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Update failed");
+    }
   },
 );
-
 const authSlice = createSlice({
   name: "auth",
 
@@ -115,6 +117,25 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.isAuthenticated = false;
+      });
+
+    builder
+
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+      })
+
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+
+        if (state.user) {
+          state.user.user_name = action.payload.name;
+        }
+      })
+
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
