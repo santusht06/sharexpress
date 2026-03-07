@@ -1,15 +1,18 @@
 import React from "react";
 import LOGOw from "../../../DOCUMENTS/logo.PNG";
 import { useSelector } from "react-redux";
+import { IoMdMore } from "react-icons/io";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
+
+  console.log(user);
 
   const initial = user?.user_name?.charAt(0)?.toUpperCase() || "U";
 
   return (
     <div className="w-screen h-screen bg-black flex">
-      <div className="w-[260px] h-full border-r border-[#ffffff10] px-5 py-5 flex flex-col">
+      <div className="w-[260px] h-full  px-5 py-5 flex flex-col">
         <div className="flex items-center gap-2 mb-8">
           <img
             src={LOGOw}
@@ -35,17 +38,32 @@ const Dashboard = () => {
         </div>
 
         <div className="mt-auto border-t border-[#ffffff10] pt-4">
-          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1a1a1a] cursor-pointer transition">
-            <div className="h-9 w-9 bg-[#202020] rounded-full flex items-center justify-center text-white text-sm font-medium">
-              {initial}
+          <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#1a1a1a] cursor-pointer transition">
+            <div className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden bg-[#202020] flex items-center justify-center text-white text-sm font-medium">
+              {user?.picture ? (
+                <img
+                  src={user.picture}
+                  alt="profile"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                initial
+              )}
             </div>
 
-            <div className="leading-tight">
-              <p className="text-sm text-white font-medium">
-                {user?.user_name || "User"}
-              </p>
+            <div className="leading-tight flex-1">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-white font-medium">
+                  {user?.user_name || "User"}
+                </p>
 
-              <p className="text-xs text-[#7a7a7a]">{user?.email || ""}</p>
+                <IoMdMore className="text-[#9a9a9a] hover:text-white" />
+              </div>
+
+              <p className="text-xs text-[#7a7a7a] truncate max-w-[150px]">
+                {user?.email || ""}
+              </p>
             </div>
           </div>
         </div>
