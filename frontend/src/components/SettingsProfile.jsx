@@ -9,18 +9,18 @@ const SettingsProfile = () => {
     <div className="w-48 bg-[#171717] border border-[#ffffff10] rounded-xl shadow-xl py-2 px-1 ">
       <button
         onClick={() => navigate("/dashboard/profile")}
-        className="w-full rounded-xl flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition"
+        className="w-full rounded-md flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition"
       >
         <FiUser size={16} />
-        Profile
+        Account
       </button>
 
-      <button className="w-full rounded-xl  flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition">
+      <button className="w-full rounded-md  flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition">
         <FiSettings size={16} />
         Settings
       </button>
 
-      <div className="border-t rounded-xl  border-[#ffffff10] my-2"></div>
+      <div className="border-t rounded-md  border-[#ffffff10] my-2"></div>
 
       <button className="w-full rounded-xl  flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition">
         <FiLogOut size={16} />
