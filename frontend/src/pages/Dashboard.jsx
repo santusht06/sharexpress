@@ -8,6 +8,7 @@ import { useRef, useEffect } from "react";
 import DashboardFiles from "../components/Dashboard/DashboardFiles";
 import History from "../components/Dashboard/History";
 import Profile from "../components/Dashboard/Profile";
+import QR from "../components/Dashboard/QR";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -91,6 +92,17 @@ const Dashboard = () => {
             >
               History
             </button>
+            <button
+              onClick={() => navigate("/dashboard/QR")}
+              className={`text-left rounded-md px-4 py-2 text-sm transition
+                  ${
+                    isActive("/dashboard/QR")
+                      ? "bg-[#1a1a1a] text-white"
+                      : "text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white"
+                  }`}
+            >
+              QR Code
+            </button>
           </div>
         </div>
 
@@ -148,6 +160,7 @@ const Dashboard = () => {
         <Route index element={<DashboardFiles />} />
         <Route path="history" element={<History />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="QR" element={<QR />} />
       </Routes>
     </div>
   );
