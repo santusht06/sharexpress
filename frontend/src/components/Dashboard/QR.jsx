@@ -3,30 +3,30 @@ import { useSelector, useDispatch } from "react-redux";
 import { GenerateQRCode } from "../../store/slices/QrSlice";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "react-toastify";
+
 const QR = () => {
   const { QRToken, loading } = useSelector((state) => state.QR);
   const dispatch = useDispatch();
 
+  // Generate QR on mount
   useEffect(() => {
-    async () => {
-      const response = await dispatch(GenerateQRCode());
-      return response;
+    const generateQR = async () => {
+      try {
+        await dispatch(GenerateQRCode()).unwrap();
+      } catch (error) {
+        toast.error("Failed to generate QR");
+      }
     };
-  }, []);
+
+    generateQR();
+  }, [dispatch]);
 
   const HandleRegenQR = async () => {
     try {
-      const response = await dispatch(GenerateQRCode());
-
-      if (response.data?.success === true) {
-        toast.success("QR Generated");
-      } else {
-        toast.success("QR Generated");
-      }
-
-      return response;
+      await dispatch(GenerateQRCode()).unwrap();
+      toast.success("QR Generated");
     } catch (error) {
-      toast.error(error);
+      toast.error("Failed to regenerate QR");
     }
   };
 
@@ -40,10 +40,17 @@ const QR = () => {
             <h2 className="text-white text-sm">Share Access</h2>
 
             <div className="bg-[#171717] border border-[#ffffff10] rounded-2xl p-8 flex flex-col items-center gap-6">
+              {/* QR Container */}
               <div className="w-[220px] h-[220px] bg-white rounded-xl flex items-center justify-center">
-                <div className="bg-white p-4 rounded-xl">
-                  <QRCodeCanvas value={QRToken} size={200} />
-                </div>
+                {loading ? (
+                  <p className="text-black text-sm">Generating...</p>
+                ) : QRToken ? (
+                  <div className="bg-white p-4 rounded-xl">
+                    <QRCodeCanvas value={QRToken} size={200} />
+                  </div>
+                ) : (
+                  <p className="text-black text-sm">No QR available</p>
+                )}
               </div>
 
               <p className="text-xs text-[#7a7a7a] text-center max-w-[300px]">
@@ -53,9 +60,10 @@ const QR = () => {
 
               <button
                 onClick={HandleRegenQR}
-                className="bg-white text-black text-sm px-5 py-2 cursor-pointer rounded-full hover:bg-[#cfcfcf] transition-all duration-200 ease-in-out "
+                disabled={loading}
+                className="bg-white text-black text-sm px-5 py-2 cursor-pointer rounded-full hover:bg-[#cfcfcf] transition-all duration-200 ease-in-out disabled:opacity-50"
               >
-                Regenerate QR
+                {loading ? "Generating..." : "Regenerate QR"}
               </button>
             </div>
           </div>
