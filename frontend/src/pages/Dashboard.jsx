@@ -11,6 +11,7 @@ import Profile from "../components/Dashboard/Profile";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
+  console.log(user);
   const location = useLocation();
   const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;

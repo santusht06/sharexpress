@@ -31,3 +31,8 @@ html {
 
   border: #ffffff1a
 }
+
+.Toastify__toast {
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}

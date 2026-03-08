@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import WButton from "../components/WButton";
 import { useDispatch, useSelector } from "react-redux";
-import { sendOTP, verifyOTP } from "../store/slices/authSlice";
+import { getCurrentUser, sendOTP, verifyOTP } from "../store/slices/authSlice";
+import { toast } from "react-toastify";
 
 const TRANSITION = {
   duration: 1,
@@ -111,11 +112,46 @@ const Signin = () => {
   };
 
   console.log(VerifyOTPDATA);
+
   const handleVerifyOTP = async () => {
-    const response = await dispatch(verifyOTP(VerifyOTPDATA));
-    console.log(response);
+    const otpValue = otp.join("");
+
+    if (otpValue.length !== 6) {
+      toast.warning("Enter complete OTP");
+      return;
+    }
+
+    try {
+      await dispatch(
+        verifyOTP({
+          OTP: otpValue,
+          transactionID,
+        }),
+      ).unwrap();
+
+      navigate("/dashboard");
+      const res = await dispatch(getCurrentUser()).unwrap();
+      console.log(res);
+      toast.success(`Welcome ${res?.user?.user_name || ""}`);
+    } catch (err) {
+      toast.error(err || "OTP verification failed");
+    }
   };
 
+  const handlePaste = (e) => {
+    const pasteData = e.clipboardData.getData("text").slice(0, 6);
+
+    if (!/^\d+$/.test(pasteData)) return;
+
+    const newOtp = pasteData.split("");
+    setOtp(newOtp);
+
+    newOtp.forEach((digit, index) => {
+      if (inputRefs.current[index]) {
+        inputRefs.current[index].value = digit;
+      }
+    });
+  };
   return (
     <div className="min-h-screen w-screen bg-[#262626] flex items-center justify-center">
       <div className="w-[420px]">
@@ -231,6 +267,7 @@ const Signin = () => {
                         key={i}
                         ref={(el) => (inputRefs.current[i] = el)}
                         value={digit}
+                        onPaste={handlePaste}
                         maxLength={1}
                         onChange={(e) => handleOTPChange(e.target.value, i)}
                         onKeyDown={(e) => handleKeyDown(e, i)}

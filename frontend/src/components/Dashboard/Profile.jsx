@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { updateUser, getCurrentUser } from "../../store/slices/authSlice";
+import {
+  updateUser,
+  getCurrentUser,
+  LogoutUser,
+} from "../../store/slices/authSlice";
+import { toast } from "react-toastify";
 
 const Profile = () => {
   const { user, loading } = useSelector((state) => state.auth);
 
+  useEffect(() => {
+    if (user) {
+      setName(user.user_name);
+    }
+  }, [user]);
   const [name, setName] = useState(user?.user_name);
 
   const handleChange = (e) => {
@@ -12,20 +22,22 @@ const Profile = () => {
   };
 
   const dispatch = useDispatch();
-
   const handleUpdateChanges = async () => {
-    if (name === user.user_name) return;
+    if (name === user.user_name) {
+      toast.info("No changes to save");
+      return;
+    }
 
-    await dispatch(updateUser(name));
-    dispatch(getCurrentUser());
+    try {
+      await dispatch(updateUser(name)).unwrap();
+      await dispatch(getCurrentUser()).unwrap();
+
+      toast.success("Profile updated successfully");
+    } catch (err) {
+      toast.error(err || "Failed to update profile");
+    }
   };
   const initial = user?.user_name?.charAt(0)?.toUpperCase() || "U";
-
-  useEffect(() => {
-    if (user) {
-      setName(user.user_name);
-    }
-  }, [user]);
 
   return (
     <>
