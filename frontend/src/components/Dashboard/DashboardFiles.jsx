@@ -4,12 +4,9 @@ const DashboardFiles = () => {
   return (
     <div className="ml-[260px] flex-1 p-3">
       <div className="w-full h-full bg-[#0d0d0d] rounded-xl border border-[#ffffff10] p-6 flex flex-col">
-        {/* Header */}
         <h1 className="text-white text-lg font-medium mb-6">Files</h1>
 
-        {/* Empty State */}
         <div className="flex flex-1 flex-col items-center justify-center gap-4">
-          {/* Optional animation */}
           <video
             src="/animations/empty.webm"
             autoPlay

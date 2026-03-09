@@ -9,7 +9,10 @@ const LayoutWrapper = () => {
 
   const hideLayout =
     location.pathname.startsWith("/dashboard") ||
-    location.pathname === "/signin";
+    location.pathname === "/signin" ||
+    !["/", "/privacy", "/terms", "/security", "/signin", "/dashboard"].some(
+      (path) => location.pathname.startsWith(path),
+    );
 
   return (
     <>

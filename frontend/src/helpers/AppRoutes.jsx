@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "../pages/Home";
 import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
@@ -17,6 +17,7 @@ const AppRoutes = () => {
       <Route path="/security" element={<SecurityPolicyPage />} />
       <Route path="/signin" element={<Signin />} />
       <Route path="/dashboard/*" element={<Dashboard />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

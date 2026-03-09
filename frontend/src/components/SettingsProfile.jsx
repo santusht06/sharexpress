@@ -38,7 +38,7 @@ const SettingsProfile = () => {
 
       <button
         onClick={handleLogout}
-        className="w-full rounded-xl  flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition"
+        className="w-full rounded-md flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-[#262626] transition"
       >
         <FiLogOut size={16} />
         Logout
