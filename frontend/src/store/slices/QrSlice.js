@@ -10,6 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 //
+
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../../api/api";
 
@@ -32,89 +33,103 @@ export const ResolveQR = createAsyncThunk(
       const res = await api.post("/QR/resolve", { qr_token });
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "QR Generate failed");
+      return rejectWithValue(err.response?.data || "QR Resolve failed");
     }
   },
 );
 
 export const QRslice = createSlice({
   name: "QR",
+
   initialState: {
     QRToken: null,
     loading: false,
     error: null,
     success: false,
 
-    // RESOLVE QR RECIEVER INITIAL STATE DESCRIBE HERE
-    reciever: null,
+    reciever_name: null,
     reciever_email: null,
+    reciever_img: null,
+
     reciever_loading: false,
     reciever_success: false,
     reciever_error: null,
-    reciever_token: null,
-
-    qr_token: null,
-    qr_loading: false,
-    qr_error: null,
 
     resolved_qr: null,
-    resolved_loading: false,
-    resolved_error: null,
-
     qr_owner: null,
     qr_security: null,
   },
 
-  reducers: {},
+  reducers: {
+    clearReceiver: (state) => {
+      state.reciever_name = null;
+      state.reciever_email = null;
+      state.reciever_img = null;
+
+      state.reciever_success = false;
+      state.reciever_error = null;
+
+      state.resolved_qr = null;
+      state.qr_owner = null;
+      state.qr_security = null;
+    },
+  },
 
   extraReducers: (builder) => {
-    builder.addCase(GenerateQRCode.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-      state.success = false;
-    });
-    builder.addCase(GenerateQRCode.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.error = null;
-      state.QRToken = action.payload.qr_token;
-    });
-    builder.addCase(GenerateQRCode.rejected, (state, action) => {
-      state.loading = false;
-      state.success = false;
-      state.error = action.payload?.error || "QR GENERATE FAILED";
-    });
+    builder
+      .addCase(GenerateQRCode.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
 
-    // RECIEVER STATES DEFINE HERE
+      .addCase(GenerateQRCode.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.QRToken = action.payload.qr_token;
+      })
+
+      .addCase(GenerateQRCode.rejected, (state, action) => {
+        state.loading = false;
+        state.success = false;
+        state.error = action.payload || "QR GENERATE FAILED";
+      });
+
     builder
       .addCase(ResolveQR.pending, (state) => {
-        state.receiver_loading = true;
-        state.receiver_error = null;
-        state.receiver_success = false;
+        state.reciever_loading = true;
+        state.reciever_error = null;
+        state.reciever_success = false;
+      })
+
+      .addCase(ResolveQR.fulfilled, (state, action) => {
+        state.reciever_loading = false;
+        state.reciever_success = true;
+
+        const data = action.payload;
+
+        state.resolved_qr = {
+          qr_id: data.qr_id,
+          mode: data.mode,
+          is_own_qr: data.is_own_qr,
+        };
+
+        state.reciever_name = data.owner_info?.name || null;
+        state.reciever_email = data.owner_info?.email || null;
+        state.reciever_img = data.owner_info?.picture || null;
+
+        state.qr_owner = data.owner_info || null;
+        state.qr_security = data.security || null;
       })
 
       .addCase(ResolveQR.rejected, (state, action) => {
-        state.receiver_loading = false;
-        state.receiver_success = false;
-        state.receiver_error = action.payload?.error || "QR RESOLVE FAILED";
+        state.reciever_loading = false;
+        state.reciever_success = false;
+        state.reciever_error = action.payload || "QR RESOLVE FAILED";
       });
-
-    builder.addCase(ResolveQR.fulfilled, (state, action) => {
-      state.resolved_loading = false;
-
-      const data = action.payload;
-
-      state.resolved_qr = {
-        qr_id: data.qr_id,
-        mode: data.mode,
-        is_own_qr: data.is_own_qr,
-      };
-
-      state.qr_owner = data.owner_info;
-
-      state.qr_security = data.security;
-    });
   },
 });
+
+export const { clearReceiver } = QRslice.actions;
 
 export const QRreducer = QRslice.reducer;
