@@ -1,3 +1,15 @@
+// Copyright 2026 Sharexpress
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+//
 import React, { useState } from "react";
 import LOGOw from "../../../DOCUMENTS/logo.PNG";
 import { useSelector } from "react-redux";
@@ -9,6 +21,7 @@ import DashboardFiles from "../components/Dashboard/DashboardFiles";
 import History from "../components/Dashboard/History";
 import Profile from "../components/Dashboard/Profile";
 import QR from "../components/Dashboard/QR";
+import Session from "../components/Dashboard/Session";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
@@ -103,6 +116,17 @@ const Dashboard = () => {
             >
               QR Code
             </button>
+            <button
+              onClick={() => navigate("/dashboard/session")}
+              className={`text-left rounded-md px-4 py-2 text-sm transition
+                  ${
+                    isActive("/dashboard/session")
+                      ? "bg-[#1a1a1a] text-white"
+                      : "text-[#b3b3b3] hover:bg-[#1a1a1a] hover:text-white"
+                  }`}
+            >
+              Session
+            </button>
           </div>
         </div>
 
@@ -161,6 +185,7 @@ const Dashboard = () => {
         <Route path="history" element={<History />} />
         <Route path="profile" element={<Profile />} />
         <Route path="QR" element={<QR />} />
+        <Route path="session" element={<Session />} />
       </Routes>
     </div>
   );
