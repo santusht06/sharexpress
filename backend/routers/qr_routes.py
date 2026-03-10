@@ -50,30 +50,7 @@ class QRSettingsUpdate(BaseModel):
 
 @router.post("/create", summary="Create QR Code")
 async def generate_qr(request: Request, response: Response):
-    """
-    Create a new QR code with advanced security features
 
-    **Authenticated Users:**
-    - Get permanent QR codes (no expiry)
-    - One QR per user (returns existing if already created)
-    - Full analytics and tracking
-
-    **Guest Users:**
-    - Get temporary QR codes (10 minute expiry)
-    - Limited tracking
-
-    **Security Features:**
-    - Unique verification secret (returned only once)
-    - Rate limiting
-    - IP tracking (anonymized)
-    - Scan count tracking
-    - Optional usage limits
-
-    **Returns:**
-    - `qr_token`: Use this to verify/resolve the QR code
-    - `verification_secret`: Store securely, used for enhanced verification
-    - Security metadata including scan limits and current usage
-    """
     return await Qr_controller.create_QR(request, response)
 
 

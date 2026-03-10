@@ -1,15 +1,7 @@
 // Copyright 2026 Sharexpress
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
-//
+// Licensed under the Apache License, Version 2.0
+
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { GenerateQRCode } from "../../store/slices/QrSlice";
@@ -18,14 +10,17 @@ import { toast } from "react-toastify";
 
 const QR = () => {
   const { QRToken, loading } = useSelector((state) => state.QR);
+  const { user } = useSelector((state) => state.auth);
+
   const dispatch = useDispatch();
 
-  // Generate QR on mount
+  const initial = user?.user_name?.charAt(0)?.toUpperCase() || "U";
+
   useEffect(() => {
     const generateQR = async () => {
       try {
         await dispatch(GenerateQRCode()).unwrap();
-      } catch (error) {
+      } catch {
         toast.error("Failed to generate QR");
       }
     };
@@ -37,7 +32,7 @@ const QR = () => {
     try {
       await dispatch(GenerateQRCode()).unwrap();
       toast.success("QR Generated");
-    } catch (error) {
+    } catch {
       toast.error("Failed to regenerate QR");
     }
   };
@@ -52,14 +47,32 @@ const QR = () => {
             <h2 className="text-white text-sm">Share Access</h2>
 
             <div className="bg-[#171717] border border-[#ffffff10] rounded-2xl p-8 flex flex-col items-center gap-6">
-              {/* QR Container */}
+              {/* USER PROFILE */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-16 w-16 rounded-full overflow-hidden bg-[#202020] flex items-center justify-center text-white text-lg font-medium">
+                  {user?.picture ? (
+                    <img
+                      src={user.picture}
+                      alt="profile"
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    initial
+                  )}
+                </div>
+
+                <h3 className="text-white text-sm font-light">
+                  {user?.user_name || "User"}
+                </h3>
+              </div>
+
+              {/* QR CODE */}
               <div className="w-[220px] h-[220px] bg-white rounded-xl flex items-center justify-center">
                 {loading ? (
                   <p className="text-black text-sm">Generating...</p>
                 ) : QRToken ? (
-                  <div className="bg-white p-4 rounded-xl">
-                    <QRCodeCanvas value={QRToken} size={200} />
-                  </div>
+                  <QRCodeCanvas value={QRToken} size={200} />
                 ) : (
                   <p className="text-black text-sm">No QR available</p>
                 )}
@@ -73,7 +86,7 @@ const QR = () => {
               <button
                 onClick={HandleRegenQR}
                 disabled={loading}
-                className="bg-white text-black text-sm px-5 py-2 cursor-pointer rounded-full hover:bg-[#cfcfcf] transition-all duration-200 ease-in-out disabled:opacity-50"
+                className="bg-white text-black text-sm px-5 py-2 cursor-pointer rounded-full hover:bg-[#cfcfcf] transition disabled:opacity-50"
               >
                 {loading ? "Generating..." : "Regenerate QR"}
               </button>

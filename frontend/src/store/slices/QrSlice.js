@@ -25,6 +25,18 @@ export const GenerateQRCode = createAsyncThunk(
   },
 );
 
+export const ResolveQR = createAsyncThunk(
+  "QR/resolve",
+  async (qr_token, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/QR/resolve", { qr_token });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "QR Generate failed");
+    }
+  },
+);
+
 export const QRslice = createSlice({
   name: "QR",
   initialState: {
@@ -32,6 +44,25 @@ export const QRslice = createSlice({
     loading: false,
     error: null,
     success: false,
+
+    // RESOLVE QR RECIEVER INITIAL STATE DESCRIBE HERE
+    reciever: null,
+    reciever_email: null,
+    reciever_loading: false,
+    reciever_success: false,
+    reciever_error: null,
+    reciever_token: null,
+
+    qr_token: null,
+    qr_loading: false,
+    qr_error: null,
+
+    resolved_qr: null,
+    resolved_loading: false,
+    resolved_error: null,
+
+    qr_owner: null,
+    qr_security: null,
   },
 
   reducers: {},
@@ -52,6 +83,36 @@ export const QRslice = createSlice({
       state.loading = false;
       state.success = false;
       state.error = action.payload?.error || "QR GENERATE FAILED";
+    });
+
+    // RECIEVER STATES DEFINE HERE
+    builder
+      .addCase(ResolveQR.pending, (state) => {
+        state.receiver_loading = true;
+        state.receiver_error = null;
+        state.receiver_success = false;
+      })
+
+      .addCase(ResolveQR.rejected, (state, action) => {
+        state.receiver_loading = false;
+        state.receiver_success = false;
+        state.receiver_error = action.payload?.error || "QR RESOLVE FAILED";
+      });
+
+    builder.addCase(ResolveQR.fulfilled, (state, action) => {
+      state.resolved_loading = false;
+
+      const data = action.payload;
+
+      state.resolved_qr = {
+        qr_id: data.qr_id,
+        mode: data.mode,
+        is_own_qr: data.is_own_qr,
+      };
+
+      state.qr_owner = data.owner_info;
+
+      state.qr_security = data.security;
     });
   },
 });
