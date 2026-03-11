@@ -24,6 +24,11 @@ from fastapi.responses import RedirectResponse
 from authlib.integrations.base_client.errors import OAuthError
 from utils.random_name_for_guest import get_random_names_for_users
 from models.user_profiles import updateUser
+from models.user_model import email
+from typing import Optional
+import logging
+
+logger = logger = logging.getLogger(__name__)
 
 db = get_db()
 
@@ -334,3 +339,30 @@ class UserController:
         }
 
         return {"success": True, "user": safe_user}
+
+    @staticmethod
+    async def search_by_email(data: email):
+        try:
+            normalized_email = data.email.strip().lower()
+
+            user = await db.user.find_one(
+                {"email": normalized_email},
+                {
+                    "_id": 0,
+                    "email": 1,
+                    "name": 1,
+                    "picture": 1,
+                },
+            )
+
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            return user
+
+        except HTTPException:
+            raise
+
+        except Exception:
+            logger.exception("Error searching user by email")
+            raise HTTPException(status_code=500, detail="Internal server error")

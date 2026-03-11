@@ -50,3 +50,10 @@ class User(BaseModel):
 class OTPverify(BaseModel):
     transactionID: str
     OTP: str
+
+
+# SEARCH BY EMAIL
+
+
+class email(BaseModel):
+    email: EmailStr

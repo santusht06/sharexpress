@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
 from fastapi import APIRouter, Response, Request, Depends
-from models.user_model import User, OTPverify
+from models.user_model import User, OTPverify, email
 from controllers.user_controller import UserController
 from utils.JWT import check_auth_middleware, check_token
 from models.user_profiles import updateUser
@@ -69,3 +69,8 @@ async def auth_success():
         "message": "Authentication successful",
         "redirect": "You can close this window or redirect to your app",
     }
+
+
+@router.post("/search")
+async def seach(email: email):
+    return await UserController.search_by_email(email)

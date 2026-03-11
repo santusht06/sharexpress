@@ -38,6 +38,18 @@ export const ResolveQR = createAsyncThunk(
   },
 );
 
+export const SearchEmail = createAsyncThunk(
+  "auth/email",
+  async (email, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/auth/search", { email });
+      return res.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "EMAIL SEARCH FAILED");
+    }
+  },
+);
+
 export const QRslice = createSlice({
   name: "QR",
 
@@ -126,6 +138,32 @@ export const QRslice = createSlice({
         state.reciever_loading = false;
         state.reciever_success = false;
         state.reciever_error = action.payload || "QR RESOLVE FAILED";
+      });
+
+    // SEARCH BY EMAIL SLICES
+
+    builder
+      .addCase(SearchEmail.pending, (state) => {
+        state.reciever_loading = true;
+        state.reciever_error = null;
+        state.reciever_success = false;
+      })
+
+      .addCase(SearchEmail.fulfilled, (state, action) => {
+        state.reciever_loading = false;
+        state.reciever_success = true;
+
+        const user = action.payload;
+
+        state.reciever_name = user?.name || null;
+        state.reciever_email = user?.email || null;
+        state.reciever_img = user?.picture || null;
+      })
+
+      .addCase(SearchEmail.rejected, (state, action) => {
+        state.reciever_loading = false;
+        state.reciever_success = false;
+        state.reciever_error = action.payload || "EMAIL SEARCH FAILED";
       });
   },
 });
