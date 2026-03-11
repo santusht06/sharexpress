@@ -420,7 +420,6 @@ class Qr_controller:
                             detail="QR owner user no longer exists",
                         )
 
-                    # Check if user is trying to scan their own QR code
                     is_own_qr = owner["user_id"] == current_user["user_id"]
 
                     await Qr_controller._log_access(
@@ -435,8 +434,10 @@ class Qr_controller:
                         "user_id": owner["user_id"],
                         "email": owner["email"] if not is_own_qr else None,
                         "name": owner["name"],
-                        "picture": owner["picture"],
                     }
+
+                    if owner.get("picture"):
+                        owner_details["picture"] = owner["picture"]
 
                     return {
                         "success": True,
@@ -447,7 +448,6 @@ class Qr_controller:
                         "security": qr_data.get("security", {}),
                     }
                 else:
-                    # Session-owned QR scanned by authenticated user
                     await Qr_controller._log_access(
                         qr_id=qr_data["qr_id"],
                         action="resolve",
