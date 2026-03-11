@@ -31,14 +31,19 @@ const Profile = () => {
   }, [user]);
 
   const handleChange = (e) => {
-    setName(e.target.value);
-  };
+    const value = e.target.value;
 
+    setName(value);
+  };
   const dispatch = useDispatch();
   const handleUpdateChanges = async () => {
     if (name === user.user_name) {
       toast.info("No changes to save");
       return;
+    }
+
+    if (name.trim() === "" || name.length == 0) {
+      toast.error("Name is required");
     }
 
     try {

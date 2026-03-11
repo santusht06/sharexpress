@@ -549,7 +549,6 @@ class FileController:
                 safe_name = FileValidator.validate_filename(file_data.filename)
                 object_key = f"{sharing_session_id}/{file_id}_{safe_name}"
 
-                # Generate presigned URL (sync operation in thread pool)
                 loop = asyncio.get_event_loop()
                 url = await loop.run_in_executor(
                     None, generate_presigned_upload_url, object_key

@@ -70,9 +70,13 @@ const QR = () => {
               </div>
 
               {/* QR CODE */}
-              <div className="w-[220px] h-[220px] bg-white rounded-xl flex items-center justify-center">
+              <div className="w-[220px] h-[220px] bg-white rounded-xl flex items-center justify-center relative overflow-hidden">
                 {loading ? (
-                  <p className="text-black text-sm">Generating...</p>
+                  <div className="w-[200px] h-[200px] grid grid-cols-6 gap-[3px] animate-pulse">
+                    {Array.from({ length: 36 }).map((_, i) => (
+                      <div key={i} className="bg-black/10 rounded-[2px]" />
+                    ))}
+                  </div>
                 ) : QRToken ? (
                   <QRCodeCanvas value={QRToken} size={200} />
                 ) : (

@@ -25,3 +25,28 @@ class User_profile(BaseModel):
 
 class updateUser(BaseModel):
     name: str
+
+
+class ProfilePictureResponse(BaseModel):
+    success: bool
+    picture_url: Optional[str]
+
+
+class ProfilePicUploadRequest(BaseModel):
+    filename: str = Field(..., example="profile.png")
+    content_type: str = Field(..., example="image/png")
+
+
+class ProfilePicConfirmRequest(BaseModel):
+    object_key: str = Field(..., example="profile_pictures/userid/file.png")
+
+
+class ProfilePicUploadResponse(BaseModel):
+    success: bool
+    upload_url: str
+    object_key: str
+
+
+class ProfilePicConfirmResponse(BaseModel):
+    success: bool
+    picture_url: str

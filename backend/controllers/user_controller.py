@@ -27,6 +27,7 @@ from models.user_profiles import updateUser
 from models.user_model import email
 from typing import Optional
 import logging
+from core.config import FRONTEND_URI
 
 logger = logger = logging.getLogger(__name__)
 
@@ -261,8 +262,14 @@ class UserController:
 
             GenerateToken(user_id, response)
 
-            # return RedirectResponse(url=f"{request.base_url}auth/success")
-            return {"success": True, "message": "GOOGLE AUTHENTICATION SUCCESS"}
+            redirect = RedirectResponse(
+                url=f"{FRONTEND_URI}/",
+                status_code=302,
+            )
+
+            GenerateToken(user_id, redirect)
+
+            return redirect
 
         except OAuthError as e:
             print(f"OAuth error: {e}")
