@@ -16,7 +16,13 @@ import { api } from "../../api/api";
 
 export const GenerateQRCode = createAsyncThunk(
   "QR/generate",
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
+    const { QRToken } = getState().QR;
+
+    if (QRToken) {
+      return { qr_token: QRToken };
+    }
+
     try {
       const res = await api.post("/QR/create");
       return res.data;
@@ -25,7 +31,6 @@ export const GenerateQRCode = createAsyncThunk(
     }
   },
 );
-
 export const ResolveQR = createAsyncThunk(
   "QR/resolve",
   async (qr_token, { rejectWithValue }) => {

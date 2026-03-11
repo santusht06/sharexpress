@@ -2,7 +2,7 @@
 //
 // Licensed under the Apache License, Version 2.0
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { GenerateQRCode } from "../../store/slices/QrSlice";
 import { QRCodeCanvas } from "qrcode.react";
@@ -16,17 +16,19 @@ const QR = () => {
 
   const initial = user?.user_name?.charAt(0)?.toUpperCase() || "U";
 
-  useEffect(() => {
-    const generateQR = async () => {
-      try {
-        await dispatch(GenerateQRCode()).unwrap();
-      } catch {
-        toast.error("Failed to generate QR");
-      }
-    };
+  const hasGenerated = useRef(false);
 
-    generateQR();
-  }, [dispatch]);
+  useEffect(() => {
+    if (hasGenerated.current) return;
+
+    hasGenerated.current = true;
+
+    dispatch(GenerateQRCode())
+      .unwrap()
+      .catch(() => {
+        toast.error("Failed to generate QR");
+      });
+  }, []);
 
   const HandleRegenQR = async () => {
     try {
