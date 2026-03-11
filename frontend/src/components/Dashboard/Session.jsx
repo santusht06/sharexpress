@@ -9,14 +9,34 @@ import { useSelector, useDispatch } from "react-redux";
 import { ResolveQR } from "../../store/slices/QrSlice";
 import QRuserInfoCard from "./QRuserInfoCard";
 import { clearReceiver } from "../../store/slices/QrSlice";
+import { SearchEmail } from "../../store/slices/QrSlice";
+import { validateEmail } from "../../helpers/validateEmail";
 
 const Session = () => {
   const [email, setEmail] = useState("");
   const [QR_SCAN_OPEN, setQR_SCAN_OPEN] = useState(false);
   const dispatch = useDispatch();
 
-  const handleSearch = () => {
-    console.log("Search user:", email);
+  const handleSearch = async () => {
+    const normalized = email.trim().toLowerCase();
+
+    if (!normalized) {
+      toast.warning("Please enter an email");
+      return;
+    }
+
+    if (!validateEmail(normalized)) {
+      toast.error("Invalid email format");
+      return;
+    }
+
+    try {
+      dispatch(clearReceiver());
+
+      await dispatch(SearchEmail(normalized)).unwrap();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const handleQRScan = async (data) => {
