@@ -81,7 +81,7 @@ const Session = () => {
               <h2 className="text-white text-sm mb-4">Connect by Email</h2>
 
               <div className="flex gap-3">
-                <div className="flex items-center bg-[#1f1f1f] border border-[#ffffff10] rounded-4xl px-3 flex-1">
+                <div className="flex items-center bg-[#1f1f1f] border border-[#ffffff10] rounded-4xl px-3 flex-1 transition-all duration-200 focus-within:border-[#ffffff30]">
                   <FiSearch className="text-[#7a7a7a]" />
 
                   <input

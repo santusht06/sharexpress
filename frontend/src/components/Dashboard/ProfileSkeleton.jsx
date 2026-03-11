@@ -5,7 +5,7 @@ const ProfileSkeleton = () => {
     <div className="w-[600px] flex flex-col gap-4 animate-pulse">
       <h2 className="text-white text-sm">Profile</h2>
 
-      <div className="bg-[#171717] border border-[#ffffff10] rounded-2xl overflow-hidden">
+      <div className="bg-[#171717] border border-[#ffffff10] rounded-4xl overflow-hidden">
         {/* Avatar Skeleton */}
         <div className="p-6 flex items-center gap-4 border-b border-[#ffffff10]">
           <div className="h-20 w-20 rounded-full bg-[#2a2a2a]" />

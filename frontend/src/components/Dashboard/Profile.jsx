@@ -94,7 +94,7 @@ const Profile = () => {
                         type="text"
                         value={name}
                         onChange={handleChange}
-                        className="w-full bg-[#212121] border border-[#ffffff10] transition-all duration-300 ease-in-out rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#ffffff30]"
+                        className="w-full bg-[#212121] border border-[#ffffff10] transition-all duration-300 ease-in-out rounded-4xl px-3 py-2 text-sm text-white outline-none focus:border-[#ffffff30]"
                       />
                     </div>
 
@@ -105,7 +105,7 @@ const Profile = () => {
                         type="text"
                         value={user?.email}
                         disabled
-                        className="w-full bg-[#212121] border border-[#ffffff10] rounded-lg px-3 py-2 text-sm text-[#777] outline-none"
+                        className="w-full hover:cursor-not-allowed bg-[#212121] border border-[#ffffff10] rounded-4xl px-3 py-2 text-sm text-[#777] outline-none"
                       />
 
                       <p className="text-xs text-[#6b6b6b]">
