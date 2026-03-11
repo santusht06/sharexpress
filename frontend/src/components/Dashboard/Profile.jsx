@@ -18,16 +18,17 @@ import {
   LogoutUser,
 } from "../../store/slices/authSlice";
 import { toast } from "react-toastify";
+import ProfileSkeleton from "../Dashboard/ProfileSkeleton";
 
 const Profile = () => {
   const { user, loading } = useSelector((state) => state.auth);
+  const [name, setName] = useState(user?.user_name);
 
   useEffect(() => {
     if (user) {
       setName(user.user_name);
     }
   }, [user]);
-  const [name, setName] = useState(user?.user_name);
 
   const handleChange = (e) => {
     setName(e.target.value);
@@ -62,10 +63,7 @@ const Profile = () => {
 
           <div className="w-full flex justify-center">
             {loading ? (
-              <div className="flex flex-col justify-center items-center gap-3 text-white">
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm text-[#9a9a9a]">Updating profile...</p>
-              </div>
+              <ProfileSkeleton />
             ) : (
               <>
                 <div className="w-[600px] flex flex-col gap-4">
