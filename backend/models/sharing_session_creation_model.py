@@ -57,3 +57,18 @@ class SharingSession(BaseModel):
     updated_at: Optional[datetime] = None
     claimed_at: Optional[datetime] = None
     revoked_at: Optional[datetime] = None
+
+
+class AcceptSessionRequest(BaseModel):
+    qr_token: str
+    sender_id: str
+
+
+class RejectSessionRequest(BaseModel):
+    sender_id: str
+
+
+class SessionStatusResponse(BaseModel):
+    success: bool
+    status: str
+    session_id: Optional[str] = None

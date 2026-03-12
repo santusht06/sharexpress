@@ -24,6 +24,7 @@ from utils.JWT import set_sharing_cookie
 from typing import Dict
 from jose import jwt, JWTError
 from core.config import JWT_ALGORITHM, JWT_SECRET, PUBLIC_KEY
+from core.ws_manager import ws_manager
 
 db = get_db()
 
@@ -231,3 +232,99 @@ class SharingController:
         except Exception as e:
             print("terminate_session error:", e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def request_session(req: Request, qr_token: QRVerifyRequest):
+
+        (
+            sender_type,
+            sender_id,
+            sender_name,
+        ) = await SharingController.get_sender_info(req)
+
+        (
+            receiver_type,
+            receiver_id,
+            receiver_name,
+        ) = await SharingController.get_reciever_details_by_token(qr_token)
+
+        await ws_manager.send_to_user(
+            receiver_id,
+            {
+                "type": "session_request",
+                "sender_id": sender_id,
+                "sender_type": sender_type,
+                "sender_name": sender_name,
+                "qr_token": qr_token.qr_token,
+            },
+        )
+
+        return {
+            "success": True,
+            "message": "Session request sent",
+            "sender_id": sender_id,
+            "qr_token": qr_token.qr_token,
+            "sender_name": sender_name,
+        }
+
+    @staticmethod
+    async def accept_session(
+        req: Request,
+        response: Response,
+        qr_token: QRVerifyRequest,
+        sender_id: str,
+    ):
+        try:
+            result = await SharingController.create_session(req, qr_token, response)
+
+            await ws_manager.send_to_user(
+                sender_id,
+                {
+                    "type": "session_accepted",
+                    "session_id": result["session_id"],
+                },
+            )
+
+            return result
+
+        except Exception:
+            raise HTTPException(status_code=500, detail="SESSION ACCEPT FAILED")
+
+    @staticmethod
+    async def reject_session(sender_id: str):
+
+        await ws_manager.send_to_user(
+            sender_id,
+            {
+                "type": "session_rejected",
+            },
+        )
+
+        return {"success": True, "session": False}
+
+    @staticmethod
+    async def session_status(qr_token: str, sender_id: str):
+
+        session = await db.sharing_session.find_one(
+            {
+                "qr_token": qr_token,
+                "sender_ID": sender_id,
+            },
+            {
+                "_id": 0,
+                "sharing_session_ID": 1,
+                "status": 1,
+            },
+        )
+
+        if not session:
+            return {
+                "success": True,
+                "status": "pending",
+            }
+
+        return {
+            "success": True,
+            "status": session["status"],
+            "session_id": session.get("sharing_session_ID"),
+        }

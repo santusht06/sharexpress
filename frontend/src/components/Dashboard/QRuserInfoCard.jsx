@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { FiUser, FiMail, FiX, FiAlertCircle } from "react-icons/fi";
 import WButton from "../../components/WButton";
@@ -15,19 +15,24 @@ const QRuserInfoCard = () => {
     reciever_img,
     reciever_loading,
     reciever_error,
+    reciever_qr,
   } = useSelector((state) => state.QR);
-
-  const { reciever_qr } = useSelector((state) => state.QR);
-  console.log(reciever_qr);
+  useEffect(() => {
+    console.log("Receiver QR:", reciever_qr);
+  }, [reciever_qr]);
 
   if (!reciever_loading && !reciever_error && !reciever_name) return null;
 
   const initial = reciever_name?.charAt(0)?.toUpperCase() || "U";
 
-  // const handleShareSessionCreation()=>{
-  //   const res = await dispatch(SessionCreate())
-  // }
-
+  const handleSessionCreation = async () => {
+    try {
+      const res = await dispatch(SessionCreate(reciever_qr)).unwrap();
+      return res;
+    } catch (err) {
+      console.error(err);
+    }
+  };
   return (
     <div className="fixed bottom-6 right-6 z-[100] animate-slideIn">
       <div className="w-[320px] bg-[#171717] border border-[#ffffff15] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl relative">
@@ -114,7 +119,7 @@ const QRuserInfoCard = () => {
 
             <button>
               <div className="flex justify-end">
-                <WButton text={"Connect Session"} Font_extralight />
+                <WButton text={"Request Session Connection"} Font_extralight />
               </div>
             </button>
           </>

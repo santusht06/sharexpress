@@ -357,20 +357,26 @@ class UserController:
                 {"_id": 0, "email": 1, "name": 1, "picture": 1, "user_id": 1},
             )
 
-            user_id = user["user_id"]
-
-            qr_token = await db.qr_codes.find_one(
-                {"owner_id": user_id}, {"qr_token": 1, "_id": 0}
-            )
-
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
+
+            user_id = user["user_id"]
+
+            qr = await db.qr_codes.find_one(
+                {
+                    "owner_id": user_id,
+                    "is_permanent": True,
+                    "is_active": True,
+                },
+                {"_id": 0, "qr_token": 1},
+                sort=[("created_at", -1)],
+            )
 
             return {
                 "name": user["name"],
                 "email": user["email"],
-                "picture": user["picture"],
-                "qr_token": qr_token["qr_token"],
+                "picture": user.get("picture"),
+                "qr_token": qr.get("qr_token") if qr else None,
             }
 
         except HTTPException:

@@ -6,9 +6,10 @@ export const SessionCreate = createAsyncThunk(
   async (qr_token, { rejectWithValue }) => {
     try {
       const res = await api.post("/share/create", { qr_token });
-      return res;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || "Session Creation failed");
+
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "SESSION CREATE FAILED");
     }
   },
 );
