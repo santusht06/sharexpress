@@ -360,6 +360,7 @@ class Qr_controller:
             return {
                 "success": True,
                 "qr_id": update_result["qr_id"],
+                "qr_token": update_result["qr_token"],
                 "owner_type": update_result["owner_type"],
                 "owner_id": update_result["owner_id"],
                 "is_permanent": update_result["is_permanent"],
@@ -443,6 +444,7 @@ class Qr_controller:
                         "success": True,
                         "mode": "user",
                         "qr_id": qr_data["qr_id"],
+                        "qr_token": qr_data["qr_token"],
                         "is_own_qr": is_own_qr,
                         "owner_info": owner_details,
                         "security": qr_data.get("security", {}),
@@ -460,6 +462,7 @@ class Qr_controller:
                         "success": True,
                         "mode": "user",
                         "qr_id": qr_data["qr_id"],
+                        "qr_token": qr_data["qr_token"],
                         "is_own_qr": False,
                         "owner_info": {
                             "type": "guest_session",

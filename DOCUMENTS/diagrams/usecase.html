@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShareXpress - Use Case Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0d0d0d;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #ffffff;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #B8B8B8;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .diagram-wrapper {
+            background: #171717;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .legend {
+            background: #171717;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .legend h3 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+        }
+        
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .legend-item {
+            background: #0d0d0d;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .legend-item h4 {
+            color: #ffffff;
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-item ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #B8B8B8;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-user { background: #22c55e; color: #000; }
+        .badge-guest { background: #eab308; color: #000; }
+        .badge-admin { background: #ef4444; color: #fff; }
+        .badge-system { background: #3b82f6; color: #fff; }
+        
+        .footer {
+            text-align: center;
+            color: #6b6b6b;
+            font-size: 0.9rem;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #171717 0%, #0d0d0d 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #B8B8B8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 ShareXpress Use Case Diagram</h1>
+        <p class="subtitle">Secure Session-Based File Sharing Platform</p>
+        
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">Actor Types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">25+</div>
+                <div class="stat-label">Use Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Core Modules</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">99.9%</div>
+                <div class="stat-label">Uptime Target</div>
+            </div>
+        </div>
+        
+        <!-- Main Use Case Diagram -->
+        <div class="diagram-wrapper">
+            <div class="mermaid">
+graph TB
+    %% Actors
+    RegisteredUser["👤 Registered User<br/>(Authenticated)"]:::userActor
+    GuestUser["👥 Guest User<br/>(Anonymous)"]:::guestActor
+    Admin["🔐 Admin<br/>(System Manager)"]:::adminActor
+    System["⚙️ External Systems<br/>(OAuth, Storage)"]:::systemActor
+    
+    %% Authentication & Account Management
+    subgraph Authentication["🔐 Authentication & Account Management"]
+        UC1["Send OTP to Email"]:::authUC
+        UC2["Verify OTP Code"]:::authUC
+        UC3["Login with Google OAuth"]:::authUC
+        UC4["Login with GitHub OAuth"]:::authUC
+        UC5["Create Guest Session"]:::authUC
+        UC6["Logout"]:::authUC
+        UC7["Update Profile Name"]:::authUC
+        UC8["Upload Profile Picture"]:::authUC
+        UC9["Delete Account"]:::authUC
+    end
+    
+    %% Session Management
+    subgraph Sessions["📱 Session Management"]
+        UC10["Generate QR Code"]:::sessionUC
+        UC11["Scan QR Code"]:::sessionUC
+        UC12["Create Sharing Session"]:::sessionUC
+        UC13["Search User by Email"]:::sessionUC
+        UC14["Join Session via QR"]:::sessionUC
+        UC15["View Active Sessions"]:::sessionUC
+        UC16["View Sent Sessions"]:::sessionUC
+        UC17["View Received Sessions"]:::sessionUC
+        UC18["Revoke Session Access"]:::sessionUC
+        UC19["Complete Session"]:::sessionUC
+    end
+    
+    %% File Operations
+    subgraph Files["📁 File Operations"]
+        UC20["Initialize File Upload"]:::fileUC
+        UC21["Upload File to S3"]:::fileUC
+        UC22["Complete Upload"]:::fileUC
+        UC23["Download File"]:::fileUC
+        UC24["List Session Files"]:::fileUC
+        UC25["Delete File"]:::fileUC
+        UC26["View File Metadata"]:::fileUC
+        UC27["Set Permissions"]:::fileUC
+    end
+    
+    %% System Operations
+    subgraph SystemOps["⚙️ System Operations"]
+        UC28["Auto-Delete Expired Files"]:::systemUC
+        UC29["Monitor System Health"]:::systemUC
+        UC30["View Analytics"]:::systemUC
+        UC31["Manage Rate Limits"]:::systemUC
+    end
+    
+    %% Registered User Interactions
+    RegisteredUser --> UC1
+    RegisteredUser --> UC2
+    RegisteredUser --> UC3
+    RegisteredUser --> UC4
+    RegisteredUser --> UC6
+    RegisteredUser --> UC7
+    RegisteredUser --> UC8
+    RegisteredUser --> UC9
+    RegisteredUser --> UC10
+    RegisteredUser --> UC11
+    RegisteredUser --> UC12
+    RegisteredUser --> UC13
+    RegisteredUser --> UC14
+    RegisteredUser --> UC15
+    RegisteredUser --> UC16
+    RegisteredUser --> UC17
+    RegisteredUser --> UC18
+    RegisteredUser --> UC19
+    RegisteredUser --> UC20
+    RegisteredUser --> UC21
+    RegisteredUser --> UC22
+    RegisteredUser --> UC23
+    RegisteredUser --> UC24
+    RegisteredUser --> UC25
+    RegisteredUser --> UC26
+    RegisteredUser --> UC27
+    
+    %% Guest User Interactions
+    GuestUser --> UC5
+    GuestUser --> UC11
+    GuestUser --> UC14
+    GuestUser --> UC20
+    GuestUser --> UC21
+    GuestUser --> UC22
+    GuestUser --> UC23
+    GuestUser --> UC24
+    
+    %% Admin Interactions
+    Admin --> UC29
+    Admin --> UC30
+    Admin --> UC31
+    
+    %% System Interactions
+    System --> UC28
+    System --> UC29
+    
+    %% Include Relationships
+    UC2 -.->|includes| UC6
+    UC3 -.->|includes| UC6
+    UC4 -.->|includes| UC6
+    UC12 -.->|includes| UC10
+    UC20 -.->|includes| UC21
+    UC21 -.->|includes| UC22
+    
+    %% Extend Relationships
+    UC8 -.->|extends| UC7
+    UC27 -.->|extends| UC12
+    UC25 -.->|extends| UC24
+    
+    %% Styling
+    classDef userActor fill:#22c55e,stroke:#16a34a,stroke-width:3px,color:#000
+    classDef guestActor fill:#eab308,stroke:#ca8a04,stroke-width:3px,color:#000
+    classDef adminActor fill:#ef4444,stroke:#dc2626,stroke-width:3px,color:#fff
+    classDef systemActor fill:#3b82f6,stroke:#2563eb,stroke-width:3px,color:#fff
+    
+    classDef authUC fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef sessionUC fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef fileUC fill:#7c2d12,stroke:#f97316,stroke-width:2px,color:#fff
+    classDef systemUC fill:#4c1d95,stroke:#a855f7,stroke-width:2px,color:#fff
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <h3>📋 Use Case Descriptions</h3>
+            <div class="legend-grid">
+                <!-- Authentication -->
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-user">AUTH</span>
+                        Authentication & Account
+                    </h4>
+                    <ul>
+                        <li><strong>Send OTP:</strong> Request 6-digit OTP via email</li>
+                        <li><strong>Verify OTP:</strong> Validate OTP and create session</li>
+                        <li><strong>OAuth Login:</strong> Sign in with Google/GitHub</li>
+                        <li><strong>Guest Session:</strong> 24-hour temporary access</li>
+                        <li><strong>Update Profile:</strong> Change name and picture</li>
+                        <li><strong>Delete Account:</strong> Permanent data removal</li>
+                    </ul>
+                </div>
+                
+                <!-- Session Management -->
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-system">SESSION</span>
+                        Session Management
+                    </h4>
+                    <ul>
+                        <li><strong>Generate QR:</strong> Create shareable QR code</li>
+                        <li><strong>Scan QR:</strong> Join session via camera</li>
+                        <li><strong>Create Session:</strong> Initialize file sharing</li>
+                        <li><strong>Search User:</strong> Find by email address</li>
+                        <li><strong>View Sessions:</strong> List sent/received/active</li>
+                        <li><strong>Revoke Access:</strong> Terminate session early</li>
+                        <li><strong>Set Permissions:</strong> Upload/Download/Edit</li>
+                    </ul>
+                </div>
+                
+                <!-- File Operations -->
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-guest">FILES</span>
+                        File Operations
+                    </h4>
+                    <ul>
+                        <li><strong>Initialize Upload:</strong> Get presigned URL</li>
+                        <li><strong>Upload to S3:</strong> Direct client upload</li>
+                        <li><strong>Complete Upload:</strong> Confirm and finalize</li>
+                        <li><strong>Download File:</strong> Secure presigned URL</li>
+                        <li><strong>List Files:</strong> View session contents</li>
+                        <li><strong>Delete File:</strong> Remove from session</li>
+                        <li><strong>View Metadata:</strong> Size, type, timestamp</li>
+                    </ul>
+                </div>
+                
+                <!-- System Operations -->
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-admin">SYSTEM</span>
+                        System Operations
+                    </h4>
+                    <ul>
+                        <li><strong>Auto-Delete:</strong> 30-day file expiration</li>
+                        <li><strong>Monitor Health:</strong> API uptime checks</li>
+                        <li><strong>View Analytics:</strong> Usage statistics</li>
+                        <li><strong>Rate Limiting:</strong> Prevent abuse</li>
+                        <li><strong>Circuit Breaker:</strong> Fault tolerance</li>
+                        <li><strong>Observability:</strong> Metrics & tracing</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actor Descriptions -->
+        <div class="legend">
+            <h3>👥 Actor Descriptions</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-user">👤 REGISTERED USER</span>
+                    </h4>
+                    <ul>
+                        <li>Authenticated via OTP or OAuth</li>
+                        <li>Full access to all features</li>
+                        <li>Persistent profile and history</li>
+                        <li>Can create and manage QR codes</li>
+                        <li>Email-based session creation</li>
+                        <li>Profile picture management</li>
+                    </ul>
+                </div>
+                
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-guest">👥 GUEST USER</span>
+                    </h4>
+                    <ul>
+                        <li>Anonymous 24-hour session</li>
+                        <li>Can join via QR scan</li>
+                        <li>Upload and download files</li>
+                        <li>No persistent history</li>
+                        <li>Limited to active sessions</li>
+                        <li>No QR code generation</li>
+                    </ul>
+                </div>
+                
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-admin">🔐 ADMIN</span>
+                    </h4>
+                    <ul>
+                        <li>System monitoring access</li>
+                        <li>Analytics and metrics</li>
+                        <li>Rate limit configuration</li>
+                        <li>User management</li>
+                        <li>Health check monitoring</li>
+                        <li>Incident response</li>
+                    </ul>
+                </div>
+                
+                <div class="legend-item">
+                    <h4>
+                        <span class="badge badge-system">⚙️ EXTERNAL SYSTEMS</span>
+                    </h4>
+                    <ul>
+                        <li>OAuth providers (Google, GitHub)</li>
+                        <li>AWS S3 / MinIO storage</li>
+                        <li>MongoDB Atlas database</li>
+                        <li>Redis cache</li>
+                        <li>Email service (OTP delivery)</li>
+                        <li>Monitoring (Prometheus, Jaeger)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Relationship Types -->
+        <div class="legend">
+            <h3>🔗 Relationship Types</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <h4>Association (—)</h4>
+                    <ul>
+                        <li>Actor directly performs use case</li>
+                        <li>Example: User → Login with OTP</li>
+                        <li>Solid line connection</li>
+                    </ul>
+                </div>
+                
+                <div class="legend-item">
+                    <h4>Include (---→)</h4>
+                    <ul>
+                        <li>Use case always includes another</li>
+                        <li>Example: Verify OTP includes Logout</li>
+                        <li>Dashed line with arrow</li>
+                    </ul>
+                </div>
+                
+                <div class="legend-item">
+                    <h4>Extend (---→)</h4>
+                    <ul>
+                        <li>Optional additional behavior</li>
+                        <li>Example: Update Profile extends to Upload Picture</li>
+                        <li>Dashed line with arrow</li>
+                    </ul>
+                </div>
+                
+                <div class="legend-item">
+                    <h4>Generalization (→)</h4>
+                    <ul>
+                        <li>Specialization of use case</li>
+                        <li>Example: OAuth methods extend Login</li>
+                        <li>Used for inheritance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>ShareXpress v1.0</strong> - Secure Session-Based File Sharing Platform</p>
+            <p>Copyright © 2026 ShareXpress Technologies | Apache License 2.0</p>
+            <p style="margin-top: 10px; color: #909090;">
+                Built with FastAPI • React • MongoDB Atlas • AWS S3 • Redis • Kubernetes
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                darkMode: true,
+                background: '#0d0d0d',
+                primaryColor: '#171717',
+                primaryTextColor: '#ffffff',
+                primaryBorderColor: '#ffffff20',
+                lineColor: '#ffffff40',
+                secondaryColor: '#1e1e1e',
+                tertiaryColor: '#262626',
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            }
+        });
+    </script>
+</body>
+</html>

@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { FiUser, FiMail, FiX, FiAlertCircle } from "react-icons/fi";
 import WButton from "../../components/WButton";
 import { clearReceiver } from "../../store/slices/QrSlice";
+import { SessionCreate } from "../../store/slices/ShareSessionSlice";
+import { api } from "../../api/api";
 
 const QRuserInfoCard = () => {
   const dispatch = useDispatch();
@@ -15,9 +17,16 @@ const QRuserInfoCard = () => {
     reciever_error,
   } = useSelector((state) => state.QR);
 
+  const { reciever_qr } = useSelector((state) => state.QR);
+  console.log(reciever_qr);
+
   if (!reciever_loading && !reciever_error && !reciever_name) return null;
 
   const initial = reciever_name?.charAt(0)?.toUpperCase() || "U";
+
+  // const handleShareSessionCreation()=>{
+  //   const res = await dispatch(SessionCreate())
+  // }
 
   return (
     <div className="fixed bottom-6 right-6 z-[100] animate-slideIn">
@@ -103,9 +112,11 @@ const QRuserInfoCard = () => {
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <WButton text={"Connect Session"} Font_extralight />
-            </div>
+            <button>
+              <div className="flex justify-end">
+                <WButton text={"Connect Session"} Font_extralight />
+              </div>
+            </button>
           </>
         )}
       </div>

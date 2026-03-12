@@ -25,7 +25,7 @@ import Session from "../components/Dashboard/Session";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  console.log(user);
+
   const location = useLocation();
   const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;

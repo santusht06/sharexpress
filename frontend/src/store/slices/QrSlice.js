@@ -36,6 +36,7 @@ export const ResolveQR = createAsyncThunk(
   async (qr_token, { rejectWithValue }) => {
     try {
       const res = await api.post("/QR/resolve", { qr_token });
+
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || "QR Resolve failed");
@@ -72,6 +73,8 @@ export const QRslice = createSlice({
     reciever_success: false,
     reciever_error: null,
 
+    reciever_qr: null,
+
     resolved_qr: null,
     qr_owner: null,
     qr_security: null,
@@ -82,6 +85,8 @@ export const QRslice = createSlice({
       state.reciever_name = null;
       state.reciever_email = null;
       state.reciever_img = null;
+
+      state.reciever_qr = null;
 
       state.reciever_success = false;
       state.reciever_error = null;
@@ -131,6 +136,8 @@ export const QRslice = createSlice({
           is_own_qr: data.is_own_qr,
         };
 
+        state.reciever_qr = data.qr_token;
+
         state.reciever_name = data.owner_info?.name || null;
         state.reciever_email = data.owner_info?.email || null;
         state.reciever_img = data.owner_info?.picture || null;
@@ -158,11 +165,16 @@ export const QRslice = createSlice({
         state.reciever_loading = false;
         state.reciever_success = true;
 
-        const user = action.payload;
+        const data = action.payload;
 
-        state.reciever_name = user?.name || null;
-        state.reciever_email = user?.email || null;
-        state.reciever_img = user?.picture || null;
+        state.reciever_qr = data?.qr_token || null;
+
+        state.reciever_name = data?.owner_info?.name || data?.name || null;
+        state.reciever_email = data?.owner_info?.email || data?.email || null;
+        state.reciever_img = data?.owner_info?.picture || data?.picture || null;
+
+        state.qr_owner = data?.owner_info || null;
+        state.qr_security = data?.security || null;
       })
 
       .addCase(SearchEmail.rejected, (state, action) => {
