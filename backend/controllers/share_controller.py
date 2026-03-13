@@ -122,7 +122,6 @@ class SharingController:
                 reciever_name,
             ) = await SharingController.get_reciever_details_by_token(qr_token)
 
-            # Generate a NEW sharing token (rotation)
             new_sharing_token = secrets.token_urlsafe(48)
 
             set_sharing_cookie(new_sharing_token, response)
@@ -153,7 +152,6 @@ class SharingController:
             )
 
             if existing_session:
-                # ✅ Session existed → token rotated
                 return {
                     "success": True,
                     "mode": "rotated",
@@ -285,4 +283,72 @@ class SharingController:
             },
         )
 
-        return {"success": True}
+        return {
+            "success": True,
+            "message": "Session request sent",
+            "sender_id": sender_id,
+            "qr_token": qr_token.qr_token,
+            "sender_name": sender_name,
+        }
+
+    @staticmethod
+    async def accept_session(req, response, qr_token, sender_id):
+
+        result = await SharingController.create_session(req, qr_token, response)
+
+        await ws_manager.send_to_user(
+            sender_id,
+            {
+                "type": "session_accepted",
+                "session_id": result["session_id"],
+                "mode": result["mode"],
+                "sender_name": result["sender_name"],
+                "reciever_name": result["reciever_name"],
+                "qr_token": qr_token.qr_token,
+            },
+        )
+        return {
+            "success": True,
+            "mode": result["mode"],
+            "sender_name": result["sender_name"],
+            "reciever_name": result["reciever_name"],
+        }
+
+    @staticmethod
+    async def reject_session(sender_id: str):
+
+        await ws_manager.send_to_user(
+            sender_id,
+            {
+                "type": "session_rejected",
+            },
+        )
+
+        return {"success": True, "session": False}
+
+    @staticmethod
+    async def session_status(qr_token: str, sender_id: str):
+
+        session = await db.sharing_session.find_one(
+            {
+                "qr_token": qr_token,
+                "sender_ID": sender_id,
+            },
+            {
+                "_id": 0,
+                "sharing_session_ID": 1,
+                "status": 1,
+            },
+        )
+
+        if not session:
+            return {
+                "success": True,
+                "status": "pending",
+            }
+
+        return {
+            "success": True,
+            "status": session["status"],
+            "session_id": session.get("sharing_session_ID"),
+        }

@@ -3,8 +3,14 @@ import { useSelector, useDispatch } from "react-redux";
 import { FiUser, FiMail, FiX, FiAlertCircle } from "react-icons/fi";
 import WButton from "../../components/WButton";
 import { clearReceiver } from "../../store/slices/QrSlice";
-import { SessionCreate } from "../../store/slices/ShareSessionSlice";
-import { api } from "../../api/api";
+import {
+  SessionCreate,
+  RequestSession,
+} from "../../store/slices/ShareSessionSlice";
+import {
+  clearSessionState,
+  sessionStarted,
+} from "../../store/slices/ShareSessionSlice";
 
 const QRuserInfoCard = () => {
   const dispatch = useDispatch();
@@ -17,9 +23,23 @@ const QRuserInfoCard = () => {
     reciever_error,
     reciever_qr,
   } = useSelector((state) => state.QR);
+
+  const { loading, success, error, mode, requestSent, rejected } = useSelector(
+    (state) => state.session,
+  );
   useEffect(() => {
     console.log("Receiver QR:", reciever_qr);
   }, [reciever_qr]);
+
+  useEffect(() => {
+    if (rejected) {
+      const timer = setTimeout(() => {
+        dispatch(clearSessionState());
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [rejected, dispatch]);
 
   if (!reciever_loading && !reciever_error && !reciever_name) return null;
 
@@ -27,12 +47,35 @@ const QRuserInfoCard = () => {
 
   const handleSessionCreation = async () => {
     try {
-      const res = await dispatch(SessionCreate(reciever_qr)).unwrap();
+      const res = await dispatch(RequestSession(reciever_qr)).unwrap();
       return res;
     } catch (err) {
       console.error(err);
     }
   };
+
+  let buttonText = "Request Session Connection";
+  let buttonStyle = "";
+  let showSpinner = false;
+
+  if (loading) {
+    buttonText = "Sending Request...";
+    showSpinner = true;
+  }
+
+  if (requestSent) {
+    buttonText = "Request Sent ✓";
+    buttonStyle = "opacity-70 cursor-not-allowed";
+  }
+
+  if (rejected) {
+    buttonText = "Request Rejected";
+    buttonStyle = "text-red-400 cursor-not-allowed";
+  }
+
+  if (error && !rejected) {
+    buttonText = "Retry Request";
+  }
   return (
     <div className="fixed bottom-6 right-6 z-[100] animate-slideIn">
       <div className="w-[320px] bg-[#171717] border border-[#ffffff15] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl relative">
@@ -44,7 +87,6 @@ const QRuserInfoCard = () => {
           <FiX size={16} />
         </button>
 
-        {/* LOADING STATE */}
         {reciever_loading && (
           <>
             <h2 className="text-white text-sm font-medium tracking-wide">
@@ -62,7 +104,6 @@ const QRuserInfoCard = () => {
           </>
         )}
 
-        {/* ERROR STATE */}
         {reciever_error && !reciever_loading && (
           <>
             <h2 className="text-white text-sm font-medium tracking-wide">
@@ -117,9 +158,17 @@ const QRuserInfoCard = () => {
               </div>
             </div>
 
-            <button>
-              <div className="flex justify-end">
-                <WButton text={"Request Session Connection"} Font_extralight />
+            <button
+              onClick={handleSessionCreation}
+              disabled={loading || requestSent}
+              className={`flex justify-end transition ${buttonStyle}`}
+            >
+              <div className="flex items-center gap-2">
+                {showSpinner && (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
+
+                <WButton text={buttonText} Font_extralight />
               </div>
             </button>
           </>

@@ -11,7 +11,7 @@ import QRuserInfoCard from "./QRuserInfoCard";
 import { clearReceiver } from "../../store/slices/QrSlice";
 import { SearchEmail } from "../../store/slices/QrSlice";
 import { validateEmail } from "../../helpers/validateEmail";
-
+import ActiveSession from "./ActiveSession";
 const Session = () => {
   const [email, setEmail] = useState("");
   const [QR_SCAN_OPEN, setQR_SCAN_OPEN] = useState(false);
@@ -76,6 +76,7 @@ const Session = () => {
           <h1 className="text-white text-lg font-medium mb-8">Sessions</h1>
 
           <div className="max-w-[700px] mx-auto flex flex-col gap-8">
+            {" "}
             {/* EMAIL SEARCH */}
             <div className="bg-[#171717] border border-[#ffffff10] rounded-xl p-6 transition-all duration-300 ease-in-out ">
               <h2 className="text-white text-sm mb-4">Connect by Email</h2>
@@ -98,7 +99,6 @@ const Session = () => {
                 </div>
               </div>
             </div>
-
             {/* QR SECTION */}
             <div className="bg-[#171717] border border-[#ffffff10] rounded-xl p-6 flex flex-col items-center gap-4 transition-all duration-200  ">
               <QrCode size={42} className="text-white" />
@@ -138,6 +138,7 @@ const Session = () => {
                 </div>
               )}
             </div>
+            <ActiveSession />
           </div>
         </div>
       </div>
