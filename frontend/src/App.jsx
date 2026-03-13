@@ -18,6 +18,7 @@ import { useEffect } from "react";
 import { ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { connectSocket } from "./lib/socket";
+import { checkSession } from "./store/slices/ShareSessionSlice";
 import SessionRequestCard from "./components/Dashboard/SessionRequestCard";
 const App = () => {
   const dispatch = useDispatch();
@@ -28,6 +29,8 @@ const App = () => {
 
       connectSocket(user_id, dispatch);
     });
+
+    dispatch(checkSession());
   }, [dispatch]);
 
   return (

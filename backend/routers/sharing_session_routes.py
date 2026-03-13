@@ -83,3 +83,13 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
     except WebSocketDisconnect:
         ws_manager.disconnect(user_id)
+
+
+@router.get("/status")
+async def check_sharing_status(session: dict = Depends(verify_x_sharing_token)):
+    return {
+        "success": True,
+        "mode": session["status"],
+        "sender_name": session["sender_name"],
+        "reciever_name": session["reciever_name"],
+    }

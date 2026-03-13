@@ -7,7 +7,10 @@ import {
   SessionCreate,
   RequestSession,
 } from "../../store/slices/ShareSessionSlice";
-import { clearSessionState } from "../../store/slices/ShareSessionSlice";
+import {
+  clearSessionState,
+  sessionStarted,
+} from "../../store/slices/ShareSessionSlice";
 
 const QRuserInfoCard = () => {
   const dispatch = useDispatch();
@@ -37,8 +40,6 @@ const QRuserInfoCard = () => {
       return () => clearTimeout(timer);
     }
   }, [rejected, dispatch]);
-
-  console.log(loading, success, error, mode, requestSent);
 
   if (!reciever_loading && !reciever_error && !reciever_name) return null;
 
@@ -86,7 +87,6 @@ const QRuserInfoCard = () => {
           <FiX size={16} />
         </button>
 
-        {/* LOADING STATE */}
         {reciever_loading && (
           <>
             <h2 className="text-white text-sm font-medium tracking-wide">
@@ -104,7 +104,6 @@ const QRuserInfoCard = () => {
           </>
         )}
 
-        {/* ERROR STATE */}
         {reciever_error && !reciever_loading && (
           <>
             <h2 className="text-white text-sm font-medium tracking-wide">

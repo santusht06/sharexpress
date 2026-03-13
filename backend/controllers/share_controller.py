@@ -115,7 +115,6 @@ class SharingController:
                 reciever_name,
             ) = await SharingController.get_reciever_details_by_token(qr_token)
 
-            # Generate a NEW sharing token (rotation)
             new_sharing_token = secrets.token_urlsafe(48)
 
             set_sharing_cookie(new_sharing_token, response)
@@ -146,7 +145,6 @@ class SharingController:
             )
 
             if existing_session:
-                # ✅ Session existed → token rotated
                 return {
                     "success": True,
                     "mode": "rotated",
@@ -268,24 +266,27 @@ class SharingController:
         }
 
     @staticmethod
-    async def accept_session(
-        req: Request,
-        response: Response,
-        qr_token: QRVerifyRequest,
-        sender_id: str,
-    ):
-        try:
-            print("req", req, "token", qr_token, "response", response)
+    async def accept_session(req, response, qr_token, sender_id):
 
-            await ws_manager.send_to_user(
-                sender_id,
-                {"type": "session_accepted", "qr_token": qr_token.qr_token},
-            )
+        result = await SharingController.create_session(req, qr_token, response)
 
-            return {"success": True}
-
-        except Exception:
-            raise HTTPException(status_code=500, detail="SESSION ACCEPT FAILED")
+        await ws_manager.send_to_user(
+            sender_id,
+            {
+                "type": "session_accepted",
+                "session_id": result["session_id"],
+                "mode": result["mode"],
+                "sender_name": result["sender_name"],
+                "reciever_name": result["reciever_name"],
+                "qr_token": qr_token.qr_token,
+            },
+        )
+        return {
+            "success": True,
+            "mode": result["mode"],
+            "sender_name": result["sender_name"],
+            "reciever_name": result["reciever_name"],
+        }
 
     @staticmethod
     async def reject_session(sender_id: str):

@@ -8,7 +8,7 @@ import {
   acceptSession,
   rejectSession,
 } from "../../store/slices/sessionNotificationSlice";
-
+import { sessionStarted } from "../../store/slices/ShareSessionSlice";
 const SessionRequestCard = () => {
   const dispatch = useDispatch();
 
@@ -19,11 +19,21 @@ const SessionRequestCard = () => {
   if (!visible) return null;
 
   const initial = sender_name?.charAt(0)?.toUpperCase() || "U";
+  const handleAccept = async () => {
+    try {
+      const res = await dispatch(
+        acceptSession({ qr_token, sender_id }),
+      ).unwrap();
 
-  const handleAccept = () => {
-    dispatch(acceptSession({ qr_token, sender_id }));
+      console.log("ACCEPT RESPONSE:", res);
+
+      dispatch(sessionStarted(res));
+
+      dispatch(hideSessionRequest());
+    } catch (err) {
+      console.error(err);
+    }
   };
-
   const handleReject = () => {
     dispatch(rejectSession({ sender_id }));
   };

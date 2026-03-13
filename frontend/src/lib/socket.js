@@ -1,6 +1,9 @@
 import { showSessionRequest } from "../store/slices/sessionNotificationSlice";
-import { sessionRejected } from "../store/slices/ShareSessionSlice";
-import { SessionCreate } from "../store/slices/ShareSessionSlice";
+import {
+  SessionCreate,
+  sessionRejected,
+  sessionStarted,
+} from "../store/slices/ShareSessionSlice";
 import { toast } from "react-toastify";
 
 let socket = null;

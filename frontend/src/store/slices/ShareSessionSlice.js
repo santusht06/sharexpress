@@ -37,6 +37,18 @@ export const RequestSession = createAsyncThunk(
   },
 );
 
+export const checkSession = createAsyncThunk(
+  "share/check",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/share/status");
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err);
+    }
+  },
+);
+
 export const SessionSlice = createSlice({
   name: "session",
   initialState: {
@@ -47,8 +59,9 @@ export const SessionSlice = createSlice({
     mode: null,
     requestSent: false,
     rejected: false,
+
     senderName: null,
-    ReceiverName: null,
+    receiverName: null,
   },
 
   reducers: {
@@ -64,6 +77,16 @@ export const SessionSlice = createSlice({
       state.mode = null;
       state.requestSent = false;
       state.rejected = false;
+
+      state.senderName = null;
+      state.receiverName = null;
+    },
+    sessionStarted: (state, action) => {
+      state.success = true;
+      state.mode = action.payload.mode;
+
+      state.senderName = action.payload.sender_name;
+      state.receiverName = action.payload.reciever_name;
     },
   },
 
@@ -89,17 +112,20 @@ export const SessionSlice = createSlice({
 
     builder.addCase(revokeSession.pending, (state) => {
       state.loading = true;
-      state.success = false;
-      state.error = null;
     });
+
     builder.addCase(revokeSession.fulfilled, (state) => {
       state.loading = false;
-      state.success = true;
+
+      state.success = false; // 👈 card hide hoga
+      state.senderName = null;
+      state.receiverName = null;
+      state.mode = null;
     });
+
     builder.addCase(revokeSession.rejected, (state, action) => {
       state.loading = false;
-      state.success = false;
-      state.error = action.payload?.details || "REVOKE SESSION FAILED";
+      state.error = action.payload || "SESSION TERMINATE FAILED";
     });
 
     // REQUEST SESSION STATES
@@ -120,7 +146,28 @@ export const SessionSlice = createSlice({
       state.requestSent = false;
       state.error = action.payload || "SESSION REQUEST FAILED";
     });
+
+    builder.addCase(checkSession.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(checkSession.fulfilled, (state, action) => {
+      state.loading = false;
+
+      if (!action.payload) return;
+
+      state.success = true;
+      state.mode = action.payload.mode;
+
+      state.senderName = action.payload.sender_name;
+      state.receiverName = action.payload.reciever_name;
+    });
+
+    builder.addCase(checkSession.rejected, (state) => {
+      state.loading = false;
+    });
   },
 });
-export const { sessionRejected, clearSessionState } = SessionSlice.actions;
+export const { sessionRejected, clearSessionState, sessionStarted } =
+  SessionSlice.actions;
 export const SessionReducer = SessionSlice.reducer;
