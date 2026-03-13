@@ -1,50 +1,36 @@
+import { toast } from "react-toastify";
 import { showSessionRequest } from "../store/slices/sessionNotificationSlice";
-
+import { sessionRejected } from "../store/slices/ShareSessionSlice";
 let socket = null;
 
-export const connectSocket = (dispatch) => {
-  if (socket) return;
-
-  socket = new WebSocket("ws://localhost:8000/ws", [], {
-    withCredentials: true,
-  });
+export const connectSocket = (user_id, dispatch) => {
+  socket = new WebSocket(`ws://localhost:8000/share/ws/${user_id}`);
   socket.onopen = () => {
     console.log("WebSocket connected");
   };
 
   socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
+    const data = JSON.parse(event.data);
 
-      if (data.type === "session_request") {
+    switch (data.type) {
+      case "session_request":
         dispatch(showSessionRequest(data));
-      }
+        break;
 
-      if (data.type === "session_cancelled") {
-        console.log("Session request cancelled");
-      }
+      case "session_accepted":
+        toast.success("Session accepted");
+        break;
 
-      if (data.type === "session_accepted") {
-        console.log("Session accepted");
-      }
-    } catch (err) {
-      console.error("WebSocket message error:", err);
+      case "session_rejected":
+        dispatch(sessionRejected());
+        toast.error("Session rejected");
+        break;
     }
   };
 
   socket.onclose = () => {
-    console.log(" WebSocket disconnected");
-
-    socket = null;
-
-    setTimeout(() => {
-      connectSocket(dispatch);
-    }, 3000);
-  };
-
-  socket.onerror = (error) => {
-    console.error("WebSocket error:", error);
+    console.log("WebSocket disconnected");
   };
 };
 
-export const getSocket = () => socket;
+export default socket;

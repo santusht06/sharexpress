@@ -7,7 +7,7 @@ import {
   SessionCreate,
   RequestSession,
 } from "../../store/slices/ShareSessionSlice";
-import { api } from "../../api/api";
+import { clearSessionState } from "../../store/slices/ShareSessionSlice";
 
 const QRuserInfoCard = () => {
   const dispatch = useDispatch();
@@ -20,13 +20,23 @@ const QRuserInfoCard = () => {
     reciever_error,
     reciever_qr,
   } = useSelector((state) => state.QR);
+
+  const { loading, success, error, mode, requestSent, rejected } = useSelector(
+    (state) => state.session,
+  );
   useEffect(() => {
     console.log("Receiver QR:", reciever_qr);
   }, [reciever_qr]);
 
-  const { loading, success, error, mode, requestSent } = useSelector(
-    (state) => state.session,
-  );
+  useEffect(() => {
+    if (rejected) {
+      const timer = setTimeout(() => {
+        dispatch(clearSessionState());
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [rejected, dispatch]);
 
   console.log(loading, success, error, mode, requestSent);
 
@@ -57,7 +67,12 @@ const QRuserInfoCard = () => {
     buttonStyle = "opacity-70 cursor-not-allowed";
   }
 
-  if (error) {
+  if (rejected) {
+    buttonText = "Request Rejected";
+    buttonStyle = "text-red-400 cursor-not-allowed";
+  }
+
+  if (error && !rejected) {
     buttonText = "Retry Request";
   }
   return (

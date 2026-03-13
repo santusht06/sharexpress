@@ -2,13 +2,17 @@ import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { FiUser, FiX } from "react-icons/fi";
 import WButton from "../../components/WButton";
-import { hideSessionRequest } from "../../store/slices/sessionNotificationSlice";
-import { api } from "../../api/api";
+
+import {
+  hideSessionRequest,
+  acceptSession,
+  rejectSession,
+} from "../../store/slices/sessionNotificationSlice";
 
 const SessionRequestCard = () => {
   const dispatch = useDispatch();
 
-  const { visible, sender_name, sender_id, qr_token } = useSelector(
+  const { visible, sender_name, sender_id, qr_token, loading } = useSelector(
     (state) => state.sessionNotification,
   );
 
@@ -16,27 +20,17 @@ const SessionRequestCard = () => {
 
   const initial = sender_name?.charAt(0)?.toUpperCase() || "U";
 
-  const handleAccept = async () => {
-    await api.post("/share/accept", {
-      qr_token,
-      sender_id,
-    });
-
-    dispatch(hideSessionRequest());
+  const handleAccept = () => {
+    dispatch(acceptSession({ qr_token, sender_id }));
   };
 
-  const handleReject = async () => {
-    await api.post("/share/reject", {
-      sender_id,
-    });
-
-    dispatch(hideSessionRequest());
+  const handleReject = () => {
+    dispatch(rejectSession({ sender_id }));
   };
 
   return (
     <div className="fixed top-6 right-6 z-[200] animate-slideIn">
       <div className="w-[320px] bg-[#171717] border border-[#ffffff15] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl relative">
-        {/* CLOSE */}
         <button
           onClick={() => dispatch(hideSessionRequest())}
           className="absolute top-3 right-3 text-[#8a8a8a] hover:text-white"
@@ -63,15 +57,22 @@ const SessionRequestCard = () => {
           </div>
         </div>
 
+        {/* ACTIONS */}
         <div className="flex justify-end gap-3">
           <button
+            disabled={loading}
             onClick={handleReject}
-            className="text-xs text-red-400 hover:text-red-300"
+            className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
           >
             Reject
           </button>
 
-          <WButton text="Accept" Font_extralight onClick={handleAccept} />
+          <button disabled={loading} onClick={handleAccept}>
+            <WButton
+              text={loading ? "Processing..." : "Accept"}
+              Font_extralight
+            />
+          </button>
         </div>
       </div>
     </div>

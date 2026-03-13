@@ -10,7 +10,15 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
-from fastapi import APIRouter, Request, Body, Response, Depends
+from fastapi import (
+    APIRouter,
+    Request,
+    Body,
+    Response,
+    Depends,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
 from middlewares.sharing_token_middleware import verify_x_sharing_token
@@ -18,6 +26,7 @@ from models.sharing_session_creation_model import (
     AcceptSessionRequest,
     RejectSessionRequest,
 )
+from core.ws_manager import ws_manager
 
 router = APIRouter(prefix="/share", tags=["share"])
 
@@ -61,3 +70,16 @@ async def accept_session(
 @router.post("/reject")
 async def reject_session(data: RejectSessionRequest = Body(...)):
     return await SharingController.reject_session(data.sender_id)
+
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+
+    await ws_manager.connect(user_id, websocket)
+
+    try:
+        while True:
+            await websocket.receive_text()
+
+    except WebSocketDisconnect:
+        ws_manager.disconnect(user_id)

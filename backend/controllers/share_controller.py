@@ -277,6 +277,8 @@ class SharingController:
         try:
             result = await SharingController.create_session(req, qr_token, response)
 
+            print("req", req, "token", qr_token, "response", response)
+
             await ws_manager.send_to_user(
                 sender_id,
                 {

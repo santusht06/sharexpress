@@ -46,9 +46,25 @@ export const SessionSlice = createSlice({
 
     mode: null,
     requestSent: false,
+    rejected: false,
   },
 
-  reducers: {},
+  reducers: {
+    sessionRejected: (state) => {
+      state.rejected = true;
+      state.requestSent = false;
+    },
+
+    clearSessionState: (state) => {
+      state.loading = false;
+      state.success = false;
+      state.error = null;
+      state.mode = null;
+      state.requestSent = false;
+      state.rejected = false;
+    },
+  },
+
   extraReducers: (builder) => {
     builder.addCase(SessionCreate.pending, (state) => {
       state.loading = true;
@@ -101,5 +117,5 @@ export const SessionSlice = createSlice({
     });
   },
 });
-
+export const { sessionRejected, clearSessionState } = SessionSlice.actions;
 export const SessionReducer = SessionSlice.reducer;

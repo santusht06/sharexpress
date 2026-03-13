@@ -23,8 +23,11 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getCurrentUser());
-    connectSocket(dispatch);
+    dispatch(getCurrentUser()).then((res) => {
+      const user_id = res.payload.user.user_id;
+
+      connectSocket(user_id, dispatch);
+    });
   }, [dispatch]);
 
   return (
