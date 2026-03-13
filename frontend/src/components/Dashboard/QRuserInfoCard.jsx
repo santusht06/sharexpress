@@ -3,7 +3,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { FiUser, FiMail, FiX, FiAlertCircle } from "react-icons/fi";
 import WButton from "../../components/WButton";
 import { clearReceiver } from "../../store/slices/QrSlice";
-import { SessionCreate } from "../../store/slices/ShareSessionSlice";
+import {
+  SessionCreate,
+  RequestSession,
+} from "../../store/slices/ShareSessionSlice";
 import { api } from "../../api/api";
 
 const QRuserInfoCard = () => {
@@ -21,18 +24,42 @@ const QRuserInfoCard = () => {
     console.log("Receiver QR:", reciever_qr);
   }, [reciever_qr]);
 
+  const { loading, success, error, mode, requestSent } = useSelector(
+    (state) => state.session,
+  );
+
+  console.log(loading, success, error, mode, requestSent);
+
   if (!reciever_loading && !reciever_error && !reciever_name) return null;
 
   const initial = reciever_name?.charAt(0)?.toUpperCase() || "U";
 
   const handleSessionCreation = async () => {
     try {
-      const res = await dispatch(SessionCreate(reciever_qr)).unwrap();
+      const res = await dispatch(RequestSession(reciever_qr)).unwrap();
       return res;
     } catch (err) {
       console.error(err);
     }
   };
+
+  let buttonText = "Request Session Connection";
+  let buttonStyle = "";
+  let showSpinner = false;
+
+  if (loading) {
+    buttonText = "Sending Request...";
+    showSpinner = true;
+  }
+
+  if (requestSent) {
+    buttonText = "Request Sent ✓";
+    buttonStyle = "opacity-70 cursor-not-allowed";
+  }
+
+  if (error) {
+    buttonText = "Retry Request";
+  }
   return (
     <div className="fixed bottom-6 right-6 z-[100] animate-slideIn">
       <div className="w-[320px] bg-[#171717] border border-[#ffffff15] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl relative">
@@ -117,9 +144,17 @@ const QRuserInfoCard = () => {
               </div>
             </div>
 
-            <button>
-              <div className="flex justify-end">
-                <WButton text={"Request Session Connection"} Font_extralight />
+            <button
+              onClick={handleSessionCreation}
+              disabled={loading || requestSent}
+              className={`flex justify-end transition ${buttonStyle}`}
+            >
+              <div className="flex items-center gap-2">
+                {showSpinner && (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
+
+                <WButton text={buttonText} Font_extralight />
               </div>
             </button>
           </>

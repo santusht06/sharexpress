@@ -17,16 +17,20 @@ import { getCurrentUser } from "./store/slices/authSlice";
 import { useEffect } from "react";
 import { ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { connectSocket } from "./lib/socket";
+import SessionRequestCard from "./components/Dashboard/SessionRequestCard";
 const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(getCurrentUser());
-  }, []);
+    connectSocket(dispatch);
+  }, [dispatch]);
 
   return (
     <BrowserRouter>
       <LayoutWrapper />
+      <SessionRequestCard />
       <ToastContainer
         position="top-center"
         autoClose={2500}

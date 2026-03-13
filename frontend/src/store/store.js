@@ -14,11 +14,13 @@ import { configureStore } from "@reduxjs/toolkit";
 import { authReducer } from "./slices/authSlice";
 import { QRreducer } from "./slices/QrSlice";
 import { SessionReducer } from "./slices/ShareSessionSlice";
+import { sessionNotificationReducer } from "./slices/sessionNotificationSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     QR: QRreducer,
     session: SessionReducer,
+    sessionNotification: sessionNotificationReducer,
   },
 });

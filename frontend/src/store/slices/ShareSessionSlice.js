@@ -25,14 +25,27 @@ export const revokeSession = createAsyncThunk(
     }
   },
 );
+export const RequestSession = createAsyncThunk(
+  "share/request",
+  async (qr_token, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/share/request", { qr_token });
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "SESSION REQUEST FAILED");
+    }
+  },
+);
 
 export const SessionSlice = createSlice({
   name: "session",
   initialState: {
     loading: false,
     success: false,
-    error: false,
+    error: null,
+
     mode: null,
+    requestSent: false,
   },
 
   reducers: {},
@@ -66,6 +79,25 @@ export const SessionSlice = createSlice({
       state.loading = false;
       state.success = false;
       state.error = action.payload?.details || "REVOKE SESSION FAILED";
+    });
+
+    // REQUEST SESSION STATES
+
+    builder.addCase(RequestSession.pending, (state) => {
+      state.loading = true;
+      state.requestSent = false;
+      state.error = null;
+    });
+
+    builder.addCase(RequestSession.fulfilled, (state) => {
+      state.loading = false;
+      state.requestSent = true;
+    });
+
+    builder.addCase(RequestSession.rejected, (state, action) => {
+      state.loading = false;
+      state.requestSent = false;
+      state.error = action.payload || "SESSION REQUEST FAILED";
     });
   },
 });
