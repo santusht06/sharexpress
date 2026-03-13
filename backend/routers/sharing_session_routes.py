@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
-from fastapi import APIRouter, Request, Body, Response, Depends
+from fastapi import APIRouter, Request, Body, Response, Depends, WebSocket
 from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
 from middlewares.sharing_token_middleware import verify_x_sharing_token
@@ -36,28 +36,11 @@ async def revoke_session(res: Response, session=Depends(verify_x_sharing_token))
     return await SharingController.terminate_session(session, res)
 
 
+@router.websocket("/ws/{user_id}")
+async def WS_ENDPOINT(websocket: WebSocket, user_id: str):
+    return await SharingController.websocket_endpoint(websocket, user_id)
+
+
 @router.post("/request")
-async def request_session(
-    req: Request,
-    qr_token: QRVerifyRequest = Body(...),
-):
-    return await SharingController.request_session(req, qr_token)
-
-
-@router.post("/accept")
-async def accept_session(
-    req: Request,
-    response: Response,
-    data: AcceptSessionRequest = Body(...),
-):
-    return await SharingController.accept_session(
-        req,
-        response,
-        QRVerifyRequest(qr_token=data.qr_token),
-        data.sender_id,
-    )
-
-
-@router.post("/reject")
-async def reject_session(data: RejectSessionRequest = Body(...)):
-    return await SharingController.reject_session(data.sender_id)
+async def request_session(req: Request, qr_token: QRVerifyRequest):
+    return await SharingController.RS(req, qr_token)

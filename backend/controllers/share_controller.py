@@ -11,7 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 #
 from models.sharing_session_creation_model import SharingSession, Status
-from fastapi import Request, Response, HTTPException, Body
+from fastapi import (
+    Request,
+    Response,
+    HTTPException,
+    Body,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from core.database import get_db
 from utils.JWT import get_current_user_optional
 from models.qr_model import QRVerifyRequest
@@ -234,97 +241,48 @@ class SharingController:
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
 
     @staticmethod
-    async def request_session(req: Request, qr_token: QRVerifyRequest):
+    async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
-        (
-            sender_type,
-            sender_id,
-            sender_name,
-        ) = await SharingController.get_sender_info(req)
+        await ws_manager.connect(user_id, websocket)
 
-        (
-            receiver_type,
-            receiver_id,
-            receiver_name,
-        ) = await SharingController.get_reciever_details_by_token(qr_token)
+        try:
+            while True:
+                data = await websocket.receive_json()
+
+                if data["type"] == "session_decision":
+                    sender_id = data["sender_id"]
+
+                    if data["decision"] == "accept":
+                        await ws_manager.send_to_user(
+                            sender_id,
+                            {"type": "session_accepted", "qr_token": data["qr_token"]},
+                        )
+
+                    if data["decision"] == "reject":
+                        await ws_manager.send_to_user(
+                            sender_id, {"type": "session_rejected"}
+                        )
+
+        except WebSocketDisconnect:
+            ws_manager.disconnect(user_id)
+
+    @staticmethod
+    async def RS(req: Request, qr_token: QRVerifyRequest):
+
+        sender = await get_current_user_optional(req)
+
+        receiver = await db.qr_codes.find_one({"qr_token": qr_token.qr_token})
+
+        receiver_id = receiver["owner_id"]
 
         await ws_manager.send_to_user(
             receiver_id,
             {
                 "type": "session_request",
-                "sender_id": sender_id,
-                "sender_type": sender_type,
-                "sender_name": sender_name,
+                "sender_id": sender["user_id"],
+                "sender_name": sender["name"],
                 "qr_token": qr_token.qr_token,
             },
         )
 
-        return {
-            "success": True,
-            "message": "Session request sent",
-            "sender_id": sender_id,
-            "qr_token": qr_token.qr_token,
-            "sender_name": sender_name,
-        }
-
-    @staticmethod
-    async def accept_session(
-        req: Request,
-        response: Response,
-        qr_token: QRVerifyRequest,
-        sender_id: str,
-    ):
-        try:
-            result = await SharingController.create_session(req, qr_token, response)
-
-            await ws_manager.send_to_user(
-                sender_id,
-                {
-                    "type": "session_accepted",
-                    "session_id": result["session_id"],
-                },
-            )
-
-            return result
-
-        except Exception:
-            raise HTTPException(status_code=500, detail="SESSION ACCEPT FAILED")
-
-    @staticmethod
-    async def reject_session(sender_id: str):
-
-        await ws_manager.send_to_user(
-            sender_id,
-            {
-                "type": "session_rejected",
-            },
-        )
-
-        return {"success": True, "session": False}
-
-    @staticmethod
-    async def session_status(qr_token: str, sender_id: str):
-
-        session = await db.sharing_session.find_one(
-            {
-                "qr_token": qr_token,
-                "sender_ID": sender_id,
-            },
-            {
-                "_id": 0,
-                "sharing_session_ID": 1,
-                "status": 1,
-            },
-        )
-
-        if not session:
-            return {
-                "success": True,
-                "status": "pending",
-            }
-
-        return {
-            "success": True,
-            "status": session["status"],
-            "session_id": session.get("sharing_session_ID"),
-        }
+        return {"success": True}
