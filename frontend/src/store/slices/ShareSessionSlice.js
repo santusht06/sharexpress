@@ -47,6 +47,8 @@ export const SessionSlice = createSlice({
     mode: null,
     requestSent: false,
     rejected: false,
+    senderName: null,
+    ReceiverName: null,
   },
 
   reducers: {
@@ -74,6 +76,9 @@ export const SessionSlice = createSlice({
       state.success = true;
       state.error = null;
       state.mode = action.payload.mode;
+
+      state.senderName = action.payload.sender_name;
+      state.receiverName = action.payload.reciever_name;
     });
     builder.addCase(SessionCreate.rejected, (state, action) => {
       state.loading = false;

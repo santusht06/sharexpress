@@ -3,7 +3,9 @@ import { useSelector } from "react-redux";
 import { Link2, ShieldCheck } from "lucide-react";
 
 const ActiveSession = () => {
-  const { success, mode } = useSelector((state) => state.session);
+  const { success, senderName, receiverName } = useSelector(
+    (state) => state.session,
+  );
 
   if (!success) return null;
 
@@ -15,16 +17,20 @@ const ActiveSession = () => {
         Active Session
       </div>
 
-      {/* SESSION INFO */}
+      {/* PARTICIPANTS */}
       <div className="flex items-center gap-4">
         <div className="h-11 w-11 rounded-full bg-[#202020] flex items-center justify-center text-green-400">
           <ShieldCheck size={18} />
         </div>
 
         <div className="flex flex-col leading-tight">
-          <p className="text-white text-sm">Secure connection established</p>
+          <p className="text-white text-sm">
+            {senderName} ↔ {receiverName}
+          </p>
 
-          <p className="text-xs text-[#8a8a8a] mt-1">Mode: {mode}</p>
+          <p className="text-xs text-[#8a8a8a] mt-1">
+            Secure connection established
+          </p>
         </div>
       </div>
 

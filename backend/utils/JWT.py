@@ -188,6 +188,6 @@ def set_sharing_cookie(sharing_token: str, response: Response) -> None:
         httponly=True,
         secure=False,  # True in prod
         samesite="lax",
-        max_age=30 * 60,
+        max_age=60 * 60 * 24,
         path="/",
     )
