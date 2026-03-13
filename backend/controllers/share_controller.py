@@ -275,19 +275,14 @@ class SharingController:
         sender_id: str,
     ):
         try:
-            result = await SharingController.create_session(req, qr_token, response)
-
             print("req", req, "token", qr_token, "response", response)
 
             await ws_manager.send_to_user(
                 sender_id,
-                {
-                    "type": "session_accepted",
-                    "session_id": result["session_id"],
-                },
+                {"type": "session_accepted", "qr_token": qr_token.qr_token},
             )
 
-            return result
+            return {"success": True}
 
         except Exception:
             raise HTTPException(status_code=500, detail="SESSION ACCEPT FAILED")

@@ -1,10 +1,13 @@
-import { toast } from "react-toastify";
 import { showSessionRequest } from "../store/slices/sessionNotificationSlice";
 import { sessionRejected } from "../store/slices/ShareSessionSlice";
+import { SessionCreate } from "../store/slices/ShareSessionSlice";
+import { toast } from "react-toastify";
+
 let socket = null;
 
 export const connectSocket = (user_id, dispatch) => {
   socket = new WebSocket(`ws://localhost:8000/share/ws/${user_id}`);
+
   socket.onopen = () => {
     console.log("WebSocket connected");
   };
@@ -18,6 +21,7 @@ export const connectSocket = (user_id, dispatch) => {
         break;
 
       case "session_accepted":
+        dispatch(SessionCreate(data.qr_token));
         toast.success("Session accepted");
         break;
 
@@ -32,5 +36,3 @@ export const connectSocket = (user_id, dispatch) => {
     console.log("WebSocket disconnected");
   };
 };
-
-export default socket;
