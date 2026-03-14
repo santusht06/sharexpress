@@ -312,6 +312,7 @@ class UserController:
         """Logout user by clearing authentication cookie"""
         try:
             token = request.cookies.get("user")
+            sharing_token = request.cookies.get("x-sharing-token")
 
             if not token:
                 raise HTTPException(status_code=401, detail="Not authenticated")

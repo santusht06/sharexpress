@@ -117,7 +117,7 @@ export const SessionSlice = createSlice({
     builder.addCase(revokeSession.fulfilled, (state) => {
       state.loading = false;
 
-      state.success = false; // 👈 card hide hoga
+      state.success = false;
       state.senderName = null;
       state.receiverName = null;
       state.mode = null;

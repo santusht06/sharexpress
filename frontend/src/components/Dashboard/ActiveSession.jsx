@@ -97,7 +97,7 @@ const ActiveSession = () => {
 
       <button
         onClick={handleTerminate}
-        className="flex items-center justify-center gap-2 mt-2 text-xs text-red-400 border border-red-400/20 rounded-lg py-2 hover:bg-red-400/10 transition"
+        className="flex items-center cursor-pointer justify-center gap-2 mt-2 text-xs text-red-400 border border-red-400/20 rounded-lg py-2 hover:bg-red-400/10 transition"
       >
         <Power size={14} />
         Terminate Session
