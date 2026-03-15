@@ -67,6 +67,7 @@ export const QRslice = createSlice({
     reciever_name: null,
     reciever_email: null,
     reciever_img: null,
+    receiver_QR: null,
 
     reciever_loading: false,
     reciever_success: false,
@@ -152,6 +153,7 @@ export const QRslice = createSlice({
         state.reciever_loading = true;
         state.reciever_error = null;
         state.reciever_success = false;
+        state.receiver_QR = null;
       })
 
       .addCase(SearchEmail.fulfilled, (state, action) => {
@@ -163,6 +165,7 @@ export const QRslice = createSlice({
         state.reciever_name = user?.name || null;
         state.reciever_email = user?.email || null;
         state.reciever_img = user?.picture || null;
+        state.receiver_QR = user?.QR_TOKEN || null;
       })
 
       .addCase(SearchEmail.rejected, (state, action) => {

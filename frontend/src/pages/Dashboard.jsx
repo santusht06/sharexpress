@@ -25,7 +25,6 @@ import Session from "../components/Dashboard/Session";
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
-  console.log(user);
   const location = useLocation();
   const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;
@@ -39,7 +38,9 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    setIsOpenProfile(false);
+    queueMicrotask(() => {
+      setIsOpenProfile(false);
+    });
   }, [location]);
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
