@@ -236,3 +236,16 @@ class SharingController:
         except Exception as e:
             print("terminate_session error:", e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def check_session(req: Request):
+        try:
+            check_token = req.cookies.get("x-sharing-token")
+
+            if not check_token or check_token is None:
+                raise HTTPException(status_code=404, detail="token not found")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")

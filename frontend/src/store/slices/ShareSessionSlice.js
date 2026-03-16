@@ -25,12 +25,28 @@ export const revokeSession = createAsyncThunk(
   },
 );
 
+export const check_session = createAsyncThunk(
+  "share/check",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/share/check");
+      return res.data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export const SessionSlice = createSlice({
   name: "session",
 
   initialState: {
     loading: false,
     error: false,
+
+    check_loading: false,
+    check_success: false,
+    check_error: null,
 
     success: null,
     mode: null,
@@ -44,7 +60,19 @@ export const SessionSlice = createSlice({
     reciever_name: null,
   },
 
-  reducers: {},
+  reducers: {
+    clearSessionState: (state, action) => {
+      state.success = false;
+      state.sender_name = null;
+      state.reciever_name = null;
+      state.error = null;
+      state.sharing_token = null;
+      state.sharing_token = null;
+      state.mode = null;
+      state.sender_ID = null;
+      state.receiver_ID = null;
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(SessionCreate.pending, (state) => {
       state.loading = true;
@@ -92,7 +120,28 @@ export const SessionSlice = createSlice({
       state.success = false;
       state.error = action.payload?.details || "REVOKE SESSION FAILED";
     });
+
+    // CHECK SESSION
+
+    builder.addCase(check_session.pending, (state) => {
+      state.check_error = null;
+      state.check_loading = true;
+      state.check_success = false;
+    });
+
+    builder.addCase(check_session.fulfilled, (state, payload) => {
+      state.check_error = null;
+      state.check_loading = false;
+      state.check_success = true;
+    });
+    builder.addCase(check_session.rejected, (state, action) => {
+      state.check_error = action.payload?.error || "ERROR OCCURED";
+      state.check_loading = true;
+      state.check_success = false;
+    });
   },
 });
+
+export const { clearSessionState } = SessionSlice.actions;
 
 export const SessionReducer = SessionSlice.reducer;

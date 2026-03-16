@@ -6,6 +6,7 @@ import { Link2, ShieldCheck, AlertCircle, Power } from "lucide-react";
 //   revokeSession,
 // } from "../../store/slices/ShareSessionSlice";
 import { toast } from "react-toastify";
+import { revokeSession } from "../../store/slices/ShareSessionSlice";
 
 const ActiveSession = () => {
   const dispatch = useDispatch();
@@ -48,18 +49,18 @@ const ActiveSession = () => {
     );
   }
 
-  //   const handleTerminate = async () => {
-  //     try {
-  //       await dispatch(revokeSession()).unwrap();
+  const handleTerminate = async () => {
+    try {
+      await dispatch(revokeSession()).unwrap();
 
-  //       dispatch(clearSessionState());
+      dispatch(clearSessionState());
 
-  //       toast.info("Session terminated");
-  //     } catch (err) {
-  //       toast.error("Failed to terminate session");
-  //       console.error(err);
-  //     }
-  //   };
+      toast.info("Session terminated");
+    } catch (err) {
+      toast.error("Failed to terminate session");
+      console.error(err);
+    }
+  };
 
   return (
     <div className="w-full bg-[#171717] border border-[#ffffff15] rounded-2xl p-5 flex flex-col gap-4 shadow-2xl">

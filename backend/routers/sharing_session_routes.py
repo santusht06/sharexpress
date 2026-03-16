@@ -30,3 +30,10 @@ async def create_session(
 @router.delete("/revoke")
 async def revoke_session(res: Response, session=Depends(verify_x_sharing_token)):
     return await SharingController.terminate_session(session, res)
+
+
+@router.get("/check")
+async def check_session(token=Depends(verify_x_sharing_token)):
+    if token:
+        return {"SUCCESS": True}
+    return {"SUCCESS": False, "MESSAGE": "TOKEN EXPIRED OR NOT FOUND"}
