@@ -118,6 +118,7 @@ class Qr_controller:
                         "qr_id": existing_qr["qr_id"],
                         "qr_token": existing_qr["qr_token"],
                         "owner_type": "user",
+                        "owner_name": existing_qr["owner_name"],
                         "is_permanent": True,
                         "is_active": True,
                         "expires_at": None,

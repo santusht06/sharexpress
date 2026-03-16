@@ -79,6 +79,11 @@ class SharingController:
 
         owner_type = reciever_details["owner_type"]
 
+        owner_id = reciever_details["owner_id"]
+
+        owner = await db.user.find_one({"user_id": owner_id}, {"name": 1})
+
+        user_values = [{"user_name": ""}]
         if owner_type == ParticipantsType.SESSION.value:
             reciever_type = ParticipantsType.SESSION.value
             reciever_id = reciever_details["owner_id"]
@@ -87,7 +92,7 @@ class SharingController:
         elif owner_type == ParticipantsType.USER.value:
             reciever_type = ParticipantsType.USER.value
             reciever_id = reciever_details["owner_id"]
-            reciever_name = reciever_details["owner_name"]
+            reciever_name = owner["name"] if owner else reciever_details["owner_name"]
 
         else:
             raise HTTPException(status_code=400, detail="OWNER TYPE MUST BE DEFINED")

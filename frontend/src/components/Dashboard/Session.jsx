@@ -11,8 +11,11 @@ import QRuserInfoCard from "./QRuserInfoCard";
 import { clearReceiver } from "../../store/slices/QrSlice";
 import { SearchEmail } from "../../store/slices/QrSlice";
 import { validateEmail } from "../../helpers/validateEmail";
+import ActiveSession from "./ActiveSession";
 
 const Session = () => {
+  const { loading, success, error } = useSelector((state) => state.session);
+
   const [email, setEmail] = useState("");
   const [QR_SCAN_OPEN, setQR_SCAN_OPEN] = useState(false);
   const dispatch = useDispatch();
@@ -138,6 +141,7 @@ const Session = () => {
                 </div>
               )}
             </div>
+            {success && <ActiveSession />}
           </div>
         </div>
       </div>

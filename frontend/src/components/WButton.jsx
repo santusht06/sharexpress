@@ -16,7 +16,7 @@ const WButton = (props) => {
   return (
     <>
       <div
-        className={`bg-white text-black px-5 py-2 transition-all duration-150 ease-in-out cursor-pointer hover:bg-[#cfcfcf]  rounded-4xl border-[0.1px]  text-center text-md ${props.Font_extralight ? "font-light" : "font-[500px] "} `}
+        className={`bg-white text-black px-5 py-2 transition-all duration-150 ease-in-out cursor-pointer hover:bg-[#cfcfcf] ${props.diabled && "cursor-not-allowed"}  rounded-4xl border-[0.1px]  text-center text-md ${props.Font_extralight ? "font-light" : "font-[500px] "} `}
       >
         {props.text}
       </div>

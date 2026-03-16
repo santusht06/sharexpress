@@ -354,18 +354,28 @@ class UserController:
 
             user = await db.user.find_one(
                 {"email": normalized_email},
-                {
-                    "_id": 0,
-                    "email": 1,
-                    "name": 1,
-                    "picture": 1,
-                },
+                {"_id": 0, "email": 1, "name": 1, "picture": 1, "user_id": 1},
+            )
+
+            # SEND QR BACK TO CLIENT
+            # SEARCH QR BY USER ID
+
+            qr_user_id = user["user_id"]
+
+            QR_TOKEN = await db.qr_codes.find_one(
+                {"owner_id": qr_user_id}, {"qr_token": 1}
             )
 
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            return user
+            return {
+                "name": user["name"],
+                "email": user["email"],
+                "picture": user["picture"],
+                "user_id": user["user_id"],
+                "QR_TOKEN": QR_TOKEN["qr_token"],
+            }
 
         except HTTPException:
             raise
