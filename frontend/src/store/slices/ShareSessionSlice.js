@@ -47,6 +47,9 @@ export const SessionSlice = createSlice({
     check_loading: false,
     check_success: false,
     check_error: null,
+    check_sender_name: null,
+    check_receiver_name: null,
+    check_mode: null,
 
     success: null,
     mode: null,
@@ -113,7 +116,12 @@ export const SessionSlice = createSlice({
     });
     builder.addCase(revokeSession.fulfilled, (state) => {
       state.loading = false;
-      state.success = true;
+      state.success = false;
+
+      state.sender_name = null;
+      state.reciever_name = null;
+      state.sharing_token = null;
+      state.check_success = false;
     });
     builder.addCase(revokeSession.rejected, (state, action) => {
       state.loading = false;
@@ -127,16 +135,22 @@ export const SessionSlice = createSlice({
       state.check_error = null;
       state.check_loading = true;
       state.check_success = false;
+      state.check_sender_name = null;
+      state.check_receiver_name = null;
+      state.check_mode = null;
     });
 
-    builder.addCase(check_session.fulfilled, (state, payload) => {
+    builder.addCase(check_session.fulfilled, (state, action) => {
       state.check_error = null;
       state.check_loading = false;
       state.check_success = true;
+
+      state.check_sender_name = action.payload?.sender_name || null;
+      state.check_receiver_name = action.payload?.reciever_name || null;
     });
     builder.addCase(check_session.rejected, (state, action) => {
       state.check_error = action.payload?.error || "ERROR OCCURED";
-      state.check_loading = true;
+      state.check_loading = false;
       state.check_success = false;
     });
   },

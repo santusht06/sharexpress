@@ -33,7 +33,13 @@ async def revoke_session(res: Response, session=Depends(verify_x_sharing_token))
 
 
 @router.get("/check")
-async def check_session(token=Depends(verify_x_sharing_token)):
-    if token:
-        return {"SUCCESS": True}
-    return {"SUCCESS": False, "MESSAGE": "TOKEN EXPIRED OR NOT FOUND"}
+async def check_session(session: dict = Depends(verify_x_sharing_token)):
+    if session:
+        return {
+            "success": True,
+            "mode": session["status"],
+            "sender_name": session["sender_name"],
+            "reciever_name": session["reciever_name"],
+        }
+
+    return {"success": False, "message": "TOKEN EXPIRED OR NOT FOUND"}

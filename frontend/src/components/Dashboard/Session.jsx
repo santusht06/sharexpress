@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { Merge, QrCode } from "lucide-react";
 import WButton from "../../components/WButton";
@@ -12,13 +12,28 @@ import { clearReceiver } from "../../store/slices/QrSlice";
 import { SearchEmail } from "../../store/slices/QrSlice";
 import { validateEmail } from "../../helpers/validateEmail";
 import ActiveSession from "./ActiveSession";
+import { check_session } from "../../store/slices/ShareSessionSlice";
 
 const Session = () => {
-  const { loading, success, error } = useSelector((state) => state.session);
+  const { loading, success, error, check_loading, check_success, check_error } =
+    useSelector((state) => state.session);
 
   const [email, setEmail] = useState("");
   const [QR_SCAN_OPEN, setQR_SCAN_OPEN] = useState(false);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        await dispatch(check_session()).unwrap();
+      } catch (err) {
+        console.log("Session check failed:", err);
+      }
+    };
+
+    check();
+  }, [dispatch]);
+  console.log(check_loading, check_success, check_error);
 
   const handleSearch = async () => {
     const normalized = email.trim().toLowerCase();
@@ -101,7 +116,6 @@ const Session = () => {
                 </div>
               </div>
             </div>
-
             {/* QR SECTION */}
             <div className="bg-[#171717] border border-[#ffffff10] rounded-xl p-6 flex flex-col items-center gap-4 transition-all duration-200  ">
               <QrCode size={42} className="text-white" />
@@ -141,7 +155,9 @@ const Session = () => {
                 </div>
               )}
             </div>
-            {success && <ActiveSession />}
+            {(success || check_success || check_loading || loading) && (
+              <ActiveSession />
+            )}{" "}
           </div>
         </div>
       </div>
