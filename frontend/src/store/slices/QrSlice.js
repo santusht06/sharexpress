@@ -135,6 +135,7 @@ export const QRslice = createSlice({
         state.reciever_name = data.owner_info?.name || null;
         state.reciever_email = data.owner_info?.email || null;
         state.reciever_img = data.owner_info?.picture || null;
+        state.receiver_QR = data.owner_info?.QR_TOKEN || null;
 
         state.qr_owner = data.owner_info || null;
         state.qr_security = data.security || null;

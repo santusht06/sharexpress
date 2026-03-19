@@ -28,7 +28,7 @@ const QR = () => {
       .catch(() => {
         toast.error("Failed to generate QR");
       });
-  }, []);
+  }, [dispatch]);
 
   const HandleRegenQR = async () => {
     try {

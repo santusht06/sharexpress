@@ -23,6 +23,7 @@ from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
 from middlewares.sharing_token_middleware import verify_x_sharing_token
 from core.ws_manager import ws_manager
+import json
 
 router = APIRouter(prefix="/share", tags=["share"])
 
@@ -54,8 +55,9 @@ async def check_session(session: dict = Depends(verify_x_sharing_token)):
     return {"success": False, "message": "TOKEN EXPIRED OR NOT FOUND"}
 
 
-# @router.post("/connect_session")
-# async def connect_session(data = Depends(check_session) ):
+@router.post("/connect_session")
+async def connect_session(session: dict = Depends(verify_x_sharing_token)):
+    return await SharingController.connect_sender_receiver(session)
 
 
 @router.websocket("/ws/{QR_ID}")
@@ -65,7 +67,8 @@ async def websocket_endpoint(websocket: WebSocket, QR_ID: str):
 
     try:
         while True:
-            await websocket.receive_text()
+            data = json.loads(await websocket.receive_text())
+            print("Received:", data)
 
     except WebSocketDisconnect:
         ws_manager.disconnect(QR_ID)

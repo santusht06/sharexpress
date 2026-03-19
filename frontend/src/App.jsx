@@ -14,15 +14,36 @@ import { BrowserRouter } from "react-router-dom";
 import LayoutWrapper from "./helpers/LayoutWrapper";
 import { useDispatch } from "react-redux";
 import { getCurrentUser } from "./store/slices/authSlice";
-import { useEffect } from "react";
-import { ToastContainer, Slide } from "react-toastify";
+import { useEffect, useRef } from "react";
+import { ToastContainer, Slide, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { GenerateQRCode } from "./store/slices/QrSlice";
+import { connectSocket } from "../src/helpers/socket";
 const App = () => {
   const dispatch = useDispatch();
+  const hasGenerated = useRef(false);
 
   useEffect(() => {
     dispatch(getCurrentUser());
-  }, []);
+
+    const call_QR = async () => {
+      if (hasGenerated.current) return;
+
+      hasGenerated.current = true;
+      const res = await dispatch(GenerateQRCode())
+        .unwrap()
+        .catch(() => {
+          toast.error("Failed to generate QR");
+        });
+
+      connectSocket(res.qr_id || null, dispatch);
+
+      return res;
+      c;
+    };
+
+    call_QR();
+  }, [dispatch]);
 
   return (
     <BrowserRouter>

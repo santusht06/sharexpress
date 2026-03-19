@@ -24,6 +24,7 @@ from utils.JWT import set_sharing_cookie
 from typing import Dict
 from jose import jwt, JWTError
 from core.config import JWT_ALGORITHM, JWT_SECRET, PUBLIC_KEY
+from core.ws_manager import ws_manager
 
 db = get_db()
 
@@ -244,6 +245,40 @@ class SharingController:
 
             if not check_token or check_token is None:
                 raise HTTPException(status_code=404, detail="token not found")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def connect_sender_receiver(session):
+        try:
+            # PARSE ALL DATA HERE
+            """ WE WILL SEND TO CLIENT 
+            WHAT WE WILL HERE HERE 
+
+            1 - > SENDER NAME 
+            2 - > RECEIVER NAME
+            3 -> MODE
+            4 -> ACTIVE STATUS
+              """
+            receiver_ID = session["receiver_ID"]
+
+            sender_name = session["sender_name"]
+            receiver_name = session["reciever_name"]
+            status = session["status"]
+
+            await ws_manager.send_to_user(
+                receiver_ID,
+                {
+                    "sender_name": sender_name if sender_name else None,
+                    "receiver_name": receiver_name if receiver_name else None,
+                    "status": status if status else None,
+                },
+            )
+
+            return {"success": True}
 
         except HTTPException:
             raise

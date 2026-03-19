@@ -405,7 +405,13 @@ class Qr_controller:
                             "is_verified": True,
                             "deleted_at": None,
                         },
-                        {"_id": 0, "email": 1, "user_id": 1, "name": 1, "picture": 1},
+                        {
+                            "_id": 0,
+                            "email": 1,
+                            "user_id": 1,
+                            "name": 1,
+                            "picture": 1,
+                        },
                     )
 
                     if not owner:
@@ -435,6 +441,7 @@ class Qr_controller:
                         "user_id": owner["user_id"],
                         "email": owner["email"] if not is_own_qr else None,
                         "name": owner["name"],
+                        "QR_TOKEN": qr_token,
                     }
 
                     if owner.get("picture"):

@@ -33,7 +33,6 @@ const Session = () => {
 
     check();
   }, [dispatch]);
-  console.log(check_loading, check_success, check_error);
 
   const handleSearch = async () => {
     const normalized = email.trim().toLowerCase();
@@ -61,8 +60,6 @@ const Session = () => {
     dispatch(clearReceiver());
 
     const res = await dispatch(ResolveQR(data));
-
-    console.log("QR Result:", res.payload);
 
     setQR_SCAN_OPEN(false);
   };
