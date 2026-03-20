@@ -65,10 +65,23 @@ async def websocket_endpoint(websocket: WebSocket, QR_ID: str):
 
     await ws_manager.connect(QR_ID, websocket)
 
+    # 🔥 TEST MESSAGE
+    await websocket.send_json(
+        {"type": "test_connection", "msg": "WS WORKING", "qr_id": QR_ID}
+    )
+
     try:
         while True:
-            data = json.loads(await websocket.receive_text())
+            data = await websocket.receive_text()
             print("Received:", data)
 
     except WebSocketDisconnect:
         ws_manager.disconnect(QR_ID)
+
+
+@router.get("/test_ws/{qr_id}")
+async def test_ws(qr_id: str):
+    await ws_manager.send_to_user(
+        qr_id, {"type": "manual_test", "msg": "HELLO FROM API"}
+    )
+    return {"success": True}

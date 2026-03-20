@@ -17,9 +17,15 @@ export const connectSocket = (QR_ID, dispatch) => {
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
-    console.log(data);
-  };
+    console.log("📩 WS DATA:", data);
 
+    if (data.type === "SESSION_CONNECTED") {
+      dispatch({
+        type: "session/setConnected",
+        payload: data,
+      });
+    }
+  };
   socket.onclose = () => {
     console.log("WebSocket disconnected");
   };

@@ -263,14 +263,22 @@ class SharingController:
             3 -> MODE
             4 -> ACTIVE STATUS
               """
-            receiver_ID = session["receiver_ID"]
 
             sender_name = session["sender_name"]
             receiver_name = session["reciever_name"]
             status = session["status"]
 
-            await ws_manager.send_to_user(
-                receiver_ID,
+            QR_TOKEN = session["qr_token"]
+
+            QR_ID = await db.qr_codes.find_one(
+                {"qr_token": QR_TOKEN}, {"qr_id": 1, "_id": 0}
+            )
+
+            if not QR_ID or QR_ID is None:
+                raise HTTPException(status_code=404, detail="QR CODE NOT FOUND")
+
+            await ws_manager.send_to_room(
+                QR_ID,
                 {
                     "sender_name": sender_name if sender_name else None,
                     "receiver_name": receiver_name if receiver_name else None,
