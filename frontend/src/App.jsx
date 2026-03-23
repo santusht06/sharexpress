@@ -39,7 +39,6 @@ const App = () => {
       connectSocket(res.qr_id || null, dispatch);
 
       return res;
-      c;
     };
 
     call_QR();

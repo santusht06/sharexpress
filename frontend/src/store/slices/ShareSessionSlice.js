@@ -64,16 +64,30 @@ export const SessionSlice = createSlice({
   },
 
   reducers: {
-    clearSessionState: (state, action) => {
+    clearSessionState: (state) => {
       state.success = false;
       state.sender_name = null;
       state.reciever_name = null;
       state.error = null;
       state.sharing_token = null;
-      state.sharing_token = null;
       state.mode = null;
       state.sender_ID = null;
       state.receiver_ID = null;
+    },
+
+    socketEvent: (state, action) => {
+      const data = action.payload;
+
+      if (data.type === "CONNECTED") {
+        state.check_success = true;
+        state.check_sender_name = data.sender_name;
+        state.check_receiver_name = data.receiver_name;
+        state.check_mode = "ACTIVE";
+      }
+
+      if (data.type === "FILE_UPLOAD_START") {
+        console.log("📁 File incoming:", data.file_name);
+      }
     },
   },
   extraReducers: (builder) => {
@@ -156,6 +170,5 @@ export const SessionSlice = createSlice({
   },
 });
 
-export const { clearSessionState } = SessionSlice.actions;
-
+export const { clearSessionState, socketEvent } = SessionSlice.actions;
 export const SessionReducer = SessionSlice.reducer;
