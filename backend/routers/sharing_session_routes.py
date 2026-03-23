@@ -22,8 +22,12 @@ from fastapi import (
 from controllers.share_controller import SharingController
 from models.qr_model import QRVerifyRequest
 from middlewares.sharing_token_middleware import verify_x_sharing_token
-from core.ws_manager import ws_manager
 import json
+
+from core.ws_manager import ws_manager
+from core.database import get_db
+
+db = get_db()
 
 router = APIRouter(prefix="/share", tags=["share"])
 
@@ -55,33 +59,49 @@ async def check_session(session: dict = Depends(verify_x_sharing_token)):
     return {"success": False, "message": "TOKEN EXPIRED OR NOT FOUND"}
 
 
-@router.post("/connect_session")
-async def connect_session(session: dict = Depends(verify_x_sharing_token)):
-    return await SharingController.connect_sender_receiver(session)
-
-
-@router.websocket("/ws/{QR_ID}")
-async def websocket_endpoint(websocket: WebSocket, QR_ID: str):
-
-    await ws_manager.connect(QR_ID, websocket)
-
-    # 🔥 TEST MESSAGE
-    await websocket.send_json(
-        {"type": "test_connection", "msg": "WS WORKING", "qr_id": QR_ID}
-    )
+@router.websocket("/ws/{qr_id}")
+async def websocket_endpoint(websocket: WebSocket, qr_id: str):
+    await ws_manager.connect(qr_id, websocket)
 
     try:
         while True:
-            data = await websocket.receive_text()
-            print("Received:", data)
+            data = await websocket.receive_json()
+            print("📩 Received:", data)
 
     except WebSocketDisconnect:
-        ws_manager.disconnect(QR_ID)
+        ws_manager.disconnect(qr_id, websocket)
+        print("❌ Disconnected:", qr_id)
 
 
-@router.get("/test_ws/{qr_id}")
-async def test_ws(qr_id: str):
-    await ws_manager.send_to_user(
-        qr_id, {"type": "manual_test", "msg": "HELLO FROM API"}
+@router.post("/connect")
+async def connect_users(qr_token: QRVerifyRequest, req: Request):
+
+    # 🔥 sender info
+    sender_type, sender_id, sender_name = await SharingController.get_sender_info(req)
+
+    # 🔥 receiver info
+    (
+        receiver_type,
+        receiver_id,
+        receiver_name,
+    ) = await SharingController.get_reciever_details_by_token(qr_token)
+
+    # 🔥 get qr_id
+    qr = await db.qr_codes.find_one(
+        {"qr_token": qr_token.qr_token},
+        {"qr_id": 1, "_id": 0},
     )
+
+    qr_id = qr["qr_id"]
+
+    # 🔥 notify BOTH
+    await ws_manager.send_to_room(
+        qr_id,
+        {
+            "type": "CONNECTED",
+            "sender_name": sender_name,
+            "receiver_name": receiver_name,
+        },
+    )
+
     return {"success": True}

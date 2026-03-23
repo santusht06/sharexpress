@@ -1,10 +1,10 @@
 from fastapi import WebSocket
-from typing import Dict
+from typing import Dict, List
 
 
 class WSManager:
     def __init__(self):
-        self.rooms: Dict[str, list[WebSocket]] = {}
+        self.rooms: Dict[str, List[WebSocket]] = {}
 
     async def connect(self, room_id: str, websocket: WebSocket):
         await websocket.accept()

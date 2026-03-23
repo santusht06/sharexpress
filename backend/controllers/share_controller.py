@@ -152,6 +152,23 @@ class SharingController:
 
             if existing_session:
                 # ✅ Session existed → token rotated
+
+                qr = await db.qr_codes.find_one(
+                    {"qr_token": qr_token.qr_token},
+                    {"qr_id": 1, "_id": 0},
+                )
+
+                qr_id = qr["qr_id"]
+
+                await ws_manager.send_to_room(
+                    qr_id,
+                    {
+                        "type": "CONNECTED",
+                        "sender_name": sender_name,
+                        "receiver_name": reciever_name,
+                    },
+                )
+
                 return {
                     "success": True,
                     "mode": "rotated",
@@ -181,6 +198,23 @@ class SharingController:
             insert_session = await db.sharing_session.insert_one(
                 session_data.model_dump()
             )
+
+            qr = await db.qr_codes.find_one(
+                {"qr_token": qr_token.qr_token},
+                {"qr_id": 1, "_id": 0},
+            )
+
+            qr_id = qr["qr_id"]
+
+            await ws_manager.send_to_room(
+                qr_id,
+                {
+                    "type": "CONNECTED",
+                    "sender_name": sender_name,
+                    "receiver_name": reciever_name,
+                },
+            )
+            print("🔥 WS EVENT SENT TO:", qr_id)
 
             return {
                 "success": True,
@@ -245,48 +279,6 @@ class SharingController:
 
             if not check_token or check_token is None:
                 raise HTTPException(status_code=404, detail="token not found")
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
-
-    @staticmethod
-    async def connect_sender_receiver(session):
-        try:
-            # PARSE ALL DATA HERE
-            """ WE WILL SEND TO CLIENT 
-            WHAT WE WILL HERE HERE 
-
-            1 - > SENDER NAME 
-            2 - > RECEIVER NAME
-            3 -> MODE
-            4 -> ACTIVE STATUS
-              """
-
-            sender_name = session["sender_name"]
-            receiver_name = session["reciever_name"]
-            status = session["status"]
-
-            QR_TOKEN = session["qr_token"]
-
-            QR_ID = await db.qr_codes.find_one(
-                {"qr_token": QR_TOKEN}, {"qr_id": 1, "_id": 0}
-            )
-
-            if not QR_ID or QR_ID is None:
-                raise HTTPException(status_code=404, detail="QR CODE NOT FOUND")
-
-            await ws_manager.send_to_room(
-                QR_ID,
-                {
-                    "sender_name": sender_name if sender_name else None,
-                    "receiver_name": receiver_name if receiver_name else None,
-                    "status": status if status else None,
-                },
-            )
-
-            return {"success": True}
 
         except HTTPException:
             raise
