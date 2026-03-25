@@ -99,6 +99,8 @@ async def connect_users(qr_token: QRVerifyRequest, req: Request):
         qr_id,
         {
             "type": "CONNECTED",
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
             "sender_name": sender_name,
             "receiver_name": receiver_name,
         },
