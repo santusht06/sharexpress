@@ -88,6 +88,12 @@ export const SessionSlice = createSlice({
       if (data.type === "FILE_UPLOAD_START") {
         console.log("📁 File incoming:", data.file_name);
       }
+
+      if (data.type === "RESTORE") {
+        state.check_sender_name = data.sender_name;
+        state.check_receiver_name = data.receiver_name;
+        state.check_mode = data.status;
+      }
     },
   },
   extraReducers: (builder) => {
