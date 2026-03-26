@@ -112,9 +112,8 @@ const ActiveSession = () => {
         onClick={async () => {
           try {
             if (isSender) {
-              await dispatch(revokeSession()).unwrap();
+              handleTerminate();
 
-              dispatch(clearSessionState());
               disconnectSocket();
 
               toast.info("Session terminated");
