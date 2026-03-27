@@ -104,7 +104,7 @@ const ActiveSession = () => {
           {/* 🔥 SEND FILES BUTTON */}
           {isSender && (
             <button onClick={() => setOpenModal(true)}>
-              <WButton text={"Send Files"} />
+              <WButton Font_extralight={true} text={"Send Files"} />
             </button>
           )}
         </div>
