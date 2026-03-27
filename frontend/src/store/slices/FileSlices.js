@@ -10,17 +10,48 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 //
+
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../api/api";
 
+/**
+ * 🔥 INIT UPLOAD (get presigned URLs)
+ */
 export const initUpload = createAsyncThunk(
   "files/initUpload",
-  async (_, { rejectWithValue }) => {
+  async (files, { rejectWithValue }) => {
     try {
-      const res = await api.post("/files/init-upload");
+      const payload = {
+        files: files.map((f) => ({
+          file_name: f.name,
+          file_size: f.size,
+          content_type: f.type,
+        })),
+      };
+
+      const res = await api.post("/files/init-upload", payload);
+
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || "Upload init failed");
+    }
+  },
+);
+
+/**
+ * 🔥 COMPLETE UPLOAD
+ */
+export const completeUpload = createAsyncThunk(
+  "files/completeUpload",
+  async (files, { rejectWithValue }) => {
+    try {
+      const res = await api.post("/files/complete-upload", {
+        files,
+      });
+
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Upload complete failed");
     }
   },
 );
@@ -29,45 +60,72 @@ const FileSlice = createSlice({
   name: "files",
 
   initialState: {
-    uploadSession: null,
     uploading: false,
-    progress: 0,
     error: null,
+
+    files: [], // 🔥 store files
+    progressMap: {}, // 🔥 per-file progress
+    uploadSession: null,
   },
 
   reducers: {
-    setUploadProgress: (state, action) => {
-      state.progress = action.payload;
+    /**
+     * 🔥 SET FILES
+     */
+    setFiles: (state, action) => {
+      state.files = action.payload;
     },
 
+    /**
+     * 🔥 PROGRESS PER FILE
+     */
+    setFileProgress: (state, action) => {
+      const { index, progress } = action.payload;
+      state.progressMap[index] = progress;
+    },
+
+    /**
+     * 🔥 RESET
+     */
     resetUpload: (state) => {
-      state.uploadSession = null;
-      state.progress = 0;
       state.uploading = false;
       state.error = null;
+      state.files = [];
+      state.progressMap = {};
+      state.uploadSession = null;
     },
   },
 
   extraReducers: (builder) => {
     builder
 
+      // INIT
       .addCase(initUpload.pending, (state) => {
         state.uploading = true;
         state.error = null;
       })
 
       .addCase(initUpload.fulfilled, (state, action) => {
-        state.uploading = false;
         state.uploadSession = action.payload;
       })
 
       .addCase(initUpload.rejected, (state, action) => {
         state.uploading = false;
         state.error = action.payload;
+      })
+
+      // COMPLETE
+      .addCase(completeUpload.fulfilled, (state) => {
+        state.uploading = false;
+      })
+
+      .addCase(completeUpload.rejected, (state, action) => {
+        state.uploading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { setUploadProgress, resetUpload } = FileSlice.actions;
+export const { setFiles, setFileProgress, resetUpload } = FileSlice.actions;
 
 export const FileReducer = FileSlice.reducer;
