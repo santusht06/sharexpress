@@ -62,6 +62,32 @@ const FileSlice = createSlice({
       const { index, status } = action.payload;
       state.statusMap[index] = status;
     },
+    removeFile: (state, action) => {
+      const index = action.payload;
+
+      state.files.splice(index, 1);
+
+      delete state.progressMap[index];
+      delete state.statusMap[index];
+
+      // 🔥 reindex maps (important)
+      const newProgress = {};
+      const newStatus = {};
+
+      state.files.forEach((_, i) => {
+        newProgress[i] = state.progressMap[i] || 0;
+        newStatus[i] = state.statusMap[i] || null;
+      });
+
+      state.progressMap = newProgress;
+      state.statusMap = newStatus;
+    },
+
+    removeAllFiles: (state) => {
+      state.files = [];
+      state.progressMap = {};
+      state.statusMap = {};
+    },
 
     resetUpload: (state) => {
       state.uploading = false;
@@ -95,7 +121,12 @@ const FileSlice = createSlice({
   },
 });
 
-export const { setFiles, setFileProgress, setFileStatus, resetUpload } =
-  FileSlice.actions;
-
+export const {
+  setFiles,
+  setFileProgress,
+  setFileStatus,
+  removeFile,
+  removeAllFiles,
+  resetUpload,
+} = FileSlice.actions;
 export const FileReducer = FileSlice.reducer;
