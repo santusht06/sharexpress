@@ -121,7 +121,12 @@ const FileSlice = createSlice({
   },
 });
 
-export const { setFiles, setFileProgress, setFileStatus, resetUpload } =
-  FileSlice.actions;
-
+export const {
+  setFiles,
+  setFileProgress,
+  setFileStatus,
+  removeFile,
+  removeAllFiles,
+  resetUpload,
+} = FileSlice.actions;
 export const FileReducer = FileSlice.reducer;
