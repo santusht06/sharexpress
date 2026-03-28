@@ -78,3 +78,30 @@ def ensure_bucket():
     buckets = s3_client.list_buckets()
     if not any(b["Name"] == MINIO_BUCKET for b in buckets["Buckets"]):
         s3_client.create_bucket(Bucket=MINIO_BUCKET)
+
+
+def delete_from_storage(object_name: str):
+    try:
+        s3_client.delete_object(
+            Bucket=MINIO_BUCKET,
+            Key=object_name,
+        )
+        return True
+    except Exception as e:
+        print("Storage delete error:", e)
+        return False
+
+
+def delete_many_from_storage(keys: list[str]):
+    try:
+        objects = [{"Key": k} for k in keys]
+
+        s3_client.delete_objects(
+            Bucket=MINIO_BUCKET,
+            Delete={"Objects": objects},
+        )
+
+        return True
+    except Exception as e:
+        print("❌ Bulk delete error:", e)
+        return False

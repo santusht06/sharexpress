@@ -393,3 +393,8 @@ async def trigger_cleanup():
 @router.get("/user/files")
 async def get_files(user: dict = Depends(check_auth_middleware)):
     return await File_User.get_files_uploaded_by_users(user)
+
+
+@router.delete("/user/files")
+async def delete_hard(user: dict = Depends(check_auth_middleware)):
+    return await File_User.delete_all_files_hard(user)
