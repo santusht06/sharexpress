@@ -233,7 +233,7 @@ const Signin = () => {
                       type="submit"
                       className="w-full mt-4"
                     >
-                      <WButton text={"Continue"} />
+                      <WButton text={"Continue"} w_full={true} />
                     </button>
                   </form>
 
@@ -289,7 +289,7 @@ const Signin = () => {
                   </div>
 
                   <button onClick={handleVerifyOTP} className="w-full">
-                    <WButton text={"Verify"} />
+                    <WButton text={"Verify"} w_full={true} />
                   </button>
 
                   <p

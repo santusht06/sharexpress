@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
+from utils.JWT import check_auth_middleware
 
 from controllers.file_controller import (
     FileController,
@@ -25,6 +26,7 @@ from controllers.file_controller import (
     ValidationError,
     StorageError,
     QuotaExceededError,
+    File_User,
 )
 from middlewares.sharing_token_middleware import verify_x_sharing_token
 from slowapi import Limiter
@@ -386,3 +388,8 @@ async def trigger_cleanup():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cleanup failed"
         )
+
+
+@router.get("/user/files")
+async def get_files(user: dict = Depends(check_auth_middleware)):
+    return await File_User.get_files_uploaded_by_users(user)

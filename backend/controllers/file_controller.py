@@ -415,7 +415,6 @@ class FileController:
         start_time = time.time()
 
         try:
-            # Check rate limit
             rate_key = f"{session['sender_ID']}:{session['sharing_session_ID']}"
             if not await self.rate_limiter.acquire(rate_key):
                 raise HTTPException(
@@ -423,7 +422,6 @@ class FileController:
                     detail="Rate limit exceeded. Please wait before uploading more files.",
                 )
 
-            # Validate file count
             if len(files) > self.MAX_FILES_PER_REQUEST:
                 raise ValidationError(
                     f"Maximum {self.MAX_FILES_PER_REQUEST} files allowed per request"
@@ -432,7 +430,6 @@ class FileController:
             if not files:
                 raise ValidationError("No files provided")
 
-            # Validate total batch size
             total_size = sum(f.size for f in files)
             max_batch_size = self.MAX_FILE_SIZE * self.MAX_FILES_PER_REQUEST
 
@@ -442,7 +439,6 @@ class FileController:
                     f"limit of {max_batch_size / 1024 / 1024:.2f}MB"
                 )
 
-            # Check quota
             await self.quota_manager.check_quota(
                 user_id=session["sender_ID"],
                 session_id=session["sharing_session_ID"],
@@ -954,3 +950,51 @@ class BackgroundCleaner:
     def stop(self):
         """Stop background cleanup task"""
         self.running = False
+
+
+class File_User:
+    @staticmethod
+    async def get_files_uploaded_by_users(user):
+        try:
+            # FIND IN DB
+
+            # GET USER ID FIRST
+
+            user_id = user["user_id"] if user else None
+
+            if user_id is None:
+                raise HTTPException(status_code=404, detail="USER ID NOT FOUND")
+
+            # EXTRACT USER ID AND FIND FILES UPLOADED BY THIS USER IN DB
+
+            if user:
+                from core.database import get_db
+
+                db = get_db()
+
+                cursor = db.files.find(
+                    {"sender_ID": user_id, "is_deleted": False},
+                    {
+                        "_id": 0,
+                        "file_id": 1,
+                        "filename": 1,
+                        "size": 1,
+                        "created_at": 1,
+                        "storage_key": 1,
+                    },
+                )
+
+                files = await cursor.to_list(length=None)
+                if not files or files is None:
+                    raise HTTPException(status_code=404, detail="FILE NOT FOUND")
+
+                return files
+
+            return {"success": True, "message": "API BYPASSED"}
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
