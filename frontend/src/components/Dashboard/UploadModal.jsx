@@ -19,50 +19,51 @@ const UploadModal = ({ onClose }) => {
     files = [],
     progressMap = {},
     statusMap = {},
-    uploading,
   } = useSelector((state) => state.files || {});
-
-  const MAX_SIZE = 20 * 1024 * 1024;
 
   const [localFiles, setLocalFiles] = useState([]);
   const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // 📁 FORMAT SIZE
+  const MAX_SIZE = 20 * 1024 * 1024;
+
+  // 📁 SIZE FORMAT
   const formatSize = (size) => {
     if (size < 1024) return size + " B";
     if (size < 1024 * 1024) return (size / 1024).toFixed(1) + " KB";
     return (size / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  // 🚫 FILTER SIZE
-  const filterValidFiles = (filesArr) => {
+  // 🚫 FILTER
+  const filterValidFiles = (arr) => {
     const valid = [];
     const rejected = [];
 
-    filesArr.forEach((file) => {
-      if (file.size <= MAX_SIZE) valid.push(file);
-      else rejected.push(file);
+    arr.forEach((f) => {
+      if (f.size <= MAX_SIZE) valid.push(f);
+      else rejected.push(f);
     });
 
     if (rejected.length) {
-      toast.error(`${rejected.length} file(s) exceed 20MB limit`);
+      toast.error(`${rejected.length} file(s) exceed 20MB`);
     }
 
     return valid;
   };
 
-  // 📁 ADD FILES
-  const handleChange = (e) => {
-    let selected = Array.from(e.target.files);
-    selected = filterValidFiles(selected);
+  // 📁 ADD FILES (append)
+  const addFiles = (incoming) => {
+    const valid = filterValidFiles(incoming);
 
-    const updatedLocal = [...localFiles, ...selected];
+    if (!valid.length) return;
+
+    const updatedLocal = [...localFiles, ...valid];
     setLocalFiles(updatedLocal);
 
     dispatch(
       setFiles([
         ...files,
-        ...selected.map((f) => ({
+        ...valid.map((f) => ({
           name: f.name,
           size: f.size,
           type: f.type,
@@ -71,27 +72,14 @@ const UploadModal = ({ onClose }) => {
     );
   };
 
-  // 📦 DROP
+  const handleChange = (e) => {
+    addFiles(Array.from(e.target.files));
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     setDragActive(false);
-
-    let dropped = Array.from(e.dataTransfer.files);
-    dropped = filterValidFiles(dropped);
-
-    const updatedLocal = [...localFiles, ...dropped];
-    setLocalFiles(updatedLocal);
-
-    dispatch(
-      setFiles([
-        ...files,
-        ...dropped.map((f) => ({
-          name: f.name,
-          size: f.size,
-          type: f.type,
-        })),
-      ]),
-    );
+    addFiles(Array.from(e.dataTransfer.files));
   };
 
   // 🚀 UPLOAD WITH PROGRESS
@@ -113,62 +101,70 @@ const UploadModal = ({ onClose }) => {
       xhr.send(file);
     });
 
-  // 🚀 HANDLE UPLOAD
+  // 🚀 MAIN UPLOAD (ONLY PENDING)
   const handleUpload = async () => {
     try {
       if (!localFiles.length) return;
 
-      toast.info("Preparing upload...");
+      // 🔥 find pending indexes
+      const pendingIndexes = files
+        .map((_, i) => i)
+        .filter((i) => statusMap[i] !== "done");
 
-      const res = await dispatch(initUpload(localFiles)).unwrap();
+      if (!pendingIndexes.length) {
+        toast.info("Nothing to upload");
+        return;
+      }
+
+      setUploading(true);
+
+      const pendingFiles = pendingIndexes.map((i) => localFiles[i]);
+
+      const res = await dispatch(initUpload(pendingFiles)).unwrap();
 
       const uploaded = [];
-      const CHUNK = 3;
 
-      for (let i = 0; i < res.files.length; i += CHUNK) {
-        const batch = res.files.slice(i, i + CHUNK);
+      await Promise.all(
+        res.files.map((meta, idx) => {
+          const actualIndex = pendingIndexes[idx];
 
-        await Promise.all(
-          batch.map((meta, index) => {
-            const actualIndex = i + index;
+          dispatch(setFileStatus({ index: actualIndex, status: "uploading" }));
 
-            dispatch(
-              setFileStatus({ index: actualIndex, status: "uploading" }),
-            );
+          return uploadWithProgress(
+            meta.upload_url,
+            localFiles[actualIndex],
+            actualIndex,
+          ).then(() => {
+            dispatch(setFileStatus({ index: actualIndex, status: "done" }));
 
-            return uploadWithProgress(
-              meta.upload_url,
-              localFiles[actualIndex],
-              actualIndex,
-            ).then(() => {
-              dispatch(setFileStatus({ index: actualIndex, status: "done" }));
-
-              uploaded.push({
-                file_id: meta.file_id,
-                storage_key: meta.storage_key,
-                filename: meta.filename,
-                size: meta.size,
-              });
+            uploaded.push({
+              file_id: meta.file_id,
+              storage_key: meta.storage_key,
+              filename: meta.filename,
+              size: meta.size,
             });
-          }),
-        );
-      }
+          });
+        }),
+      );
 
       await dispatch(completeUpload(uploaded)).unwrap();
 
-      toast.success("All files uploaded 🚀");
+      toast.success("Upload complete 🚀");
     } catch (err) {
       console.error(err);
       toast.error("Upload failed");
+    } finally {
+      setUploading(false);
     }
   };
 
+  // ❌ REMOVE
   const handleRemoveFile = (index) => {
     if (uploading) return;
 
-    const updated = [...localFiles];
-    updated.splice(index, 1);
-    setLocalFiles(updated);
+    const updatedLocal = [...localFiles];
+    updatedLocal.splice(index, 1);
+    setLocalFiles(updatedLocal);
 
     dispatch(removeFile(index));
   };
@@ -180,24 +176,21 @@ const UploadModal = ({ onClose }) => {
     dispatch(removeAllFiles());
   };
 
-  const allDone =
-    files.length > 0 && files.every((_, i) => statusMap[i] === "done");
+  // 🔥 STATE FIX
+  const hasPending = files.some((_, i) => statusMap[i] !== "done");
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
       <div className="w-[420px] bg-[#171717] border border-[#ffffff12] rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
         {/* HEADER */}
         <div className="flex justify-between items-center">
-          <h2 className="text-white text-sm tracking-wide">Upload Files</h2>
-          <button
-            onClick={onClose}
-            className="text-[#6a6a6a] hover:text-white transition"
-          >
+          <h2 className="text-white text-sm">Upload Files</h2>
+          <button onClick={onClose} className="text-[#6a6a6a]">
             ✕
           </button>
         </div>
 
-        {/* DROP ZONE */}
+        {/* DROP */}
         <label
           onDragOver={(e) => {
             e.preventDefault();
@@ -205,100 +198,57 @@ const UploadModal = ({ onClose }) => {
           }}
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
-          className={`rounded-xl p-6 text-center cursor-pointer transition border relative overflow-hidden
-            ${
-              dragActive
-                ? "border-green-400 bg-green-400/5 shadow-[0_0_20px_rgba(34,197,94,0.2)]"
-                : "border-[#ffffff20] hover:border-white/40"
-            }
-          `}
+          className={`p-6 border rounded-xl text-center cursor-pointer transition ${
+            dragActive
+              ? "border-green-400 bg-green-400/10"
+              : "border-[#ffffff20]"
+          }`}
         >
-          <p className="text-xs text-[#8a8a8a]">
+          <p className="text-xs text-gray-400">
             Drag & drop or click to browse
           </p>
-
-          <input
-            type="file"
-            multiple
-            onChange={handleChange}
-            className="hidden"
-          />
+          <input type="file" multiple onChange={handleChange} hidden />
         </label>
 
-        {/* CLEAR ALL */}
+        {/* CLEAR */}
         {files.length > 0 && !uploading && (
           <button
             onClick={handleRemoveAll}
-            className="text-[10px] text-red-400 text-right hover:underline"
+            className="text-[10px] text-red-400 text-right"
           >
             Clear all
           </button>
         )}
 
-        {/* FILE LIST */}
+        {/* FILES */}
         <div className="flex flex-col gap-3 max-h-[220px] overflow-y-auto">
-          {files.length === 0 && (
-            <div className="text-center text-[#5a5a5a] text-xs py-6">
-              Drop files to start uploading
-            </div>
-          )}
-
           {files.map((file, i) => {
             const status = statusMap[i];
-            const isDone = status === "done";
 
             return (
-              <div
-                key={i}
-                className="bg-[#1f1f1f] border border-[#ffffff10] rounded-lg p-3 flex flex-col gap-2"
-              >
-                <div className="flex justify-between items-center">
+              <div key={i} className="bg-[#1f1f1f] p-3 rounded-lg">
+                <div className="flex justify-between">
                   <div>
-                    <p className="text-xs text-white truncate max-w-[200px] flex items-center gap-2">
-                      📄 {file.name}
-                    </p>
-                    <p className="text-[10px] text-[#5a5a5a]">
+                    <p className="text-xs text-white">{file.name}</p>
+                    <p className="text-[10px] text-gray-500">
                       {formatSize(file.size)}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* STATUS BADGE */}
-                    <span
-                      className={`text-[10px] px-2 py-[2px] rounded-full ${
-                        isDone
-                          ? "bg-green-400/10 text-green-400"
-                          : status === "uploading"
-                            ? "bg-yellow-400/10 text-yellow-400"
-                            : "bg-[#ffffff10] text-[#8a8a8a]"
-                      }`}
-                    >
-                      {isDone
-                        ? "Uploaded"
-                        : status === "uploading"
-                          ? "Uploading"
-                          : `${progressMap[i] || 0}%`}
-                    </span>
-
-                    {!uploading && !isDone && (
-                      <button
-                        onClick={() => handleRemoveFile(i)}
-                        className="text-[10px] text-red-400 opacity-60 hover:opacity-100"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-[10px] text-green-400">
+                    {status === "done"
+                      ? "✔ Uploaded"
+                      : status === "uploading"
+                        ? "Uploading..."
+                        : `${progressMap[i] || 0}%`}
+                  </span>
                 </div>
 
-                {/* PROGRESS BAR */}
-                <div className="w-full h-[6px] bg-[#2a2a2a] rounded overflow-hidden relative">
+                <div className="h-[5px] bg-[#2a2a2a] mt-2 rounded">
                   <div
-                    className="h-full bg-gradient-to-r from-green-400 via-emerald-300 to-green-500 transition-all duration-500 ease-out relative"
+                    className="h-full bg-green-400 transition-all"
                     style={{ width: `${progressMap[i] || 0}%` }}
-                  >
-                    <div className="absolute inset-0 bg-white/20 animate-pulse blur-sm" />
-                  </div>
+                  />
                 </div>
               </div>
             );
@@ -306,30 +256,18 @@ const UploadModal = ({ onClose }) => {
         </div>
 
         {/* FOOTER */}
-        <div className="flex justify-between items-center pt-2">
-          <button
-            onClick={onClose}
-            className="text-xs text-[#8a8a8a] hover:text-white"
-          >
+        <div className="flex justify-between items-center">
+          <button onClick={onClose} className="text-xs text-gray-400">
             Close
           </button>
 
           <WButton
-            Font_extralight
-            disabled={!files.length || uploading || allDone}
             onClick={handleUpload}
+            disabled={!hasPending || uploading}
             text={
-              uploading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Uploading...
-                </span>
-              ) : allDone ? (
-                "✔ Uploaded"
-              ) : (
-                "Upload"
-              )
+              uploading ? "Uploading..." : hasPending ? "Upload" : "Uploaded"
             }
+            Font_extralight={true}
           />
         </div>
       </div>

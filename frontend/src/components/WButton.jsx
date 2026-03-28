@@ -6,13 +6,14 @@ const WButton = ({
   disabled = false,
   loading = false,
   Font_extralight,
+  w_full,
 }) => {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`
-        px-5 py-2 rounded-4xl border-[0.1px] text-md flex items-center justify-center gap-2
+        px-5 py-2 rounded-4xl border-[0.1px] text-md flex items-center justify-center gap-2 ${w_full && "w-full"}
         transition-all duration-150 ease-in-out
 
         ${
