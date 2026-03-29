@@ -35,6 +35,33 @@ export const completeUpload = createAsyncThunk(
   },
 );
 
+export const fetchUserFiles = createAsyncThunk(
+  "files/fetchUserFiles",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get("/files/user/files");
+
+      console.log("API RESPONSE:", res.data);
+
+      return res.data || []; // ✅ FIXED
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Fetch failed");
+    }
+  },
+);
+
+export const deleteAllFiles = createAsyncThunk(
+  "files/deleteAllFiles",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.delete("/files/user/files");
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || "Delete all failed");
+    }
+  },
+);
+
 const FileSlice = createSlice({
   name: "files",
 
@@ -42,10 +69,11 @@ const FileSlice = createSlice({
     uploading: false,
     error: null,
     files: [],
+    userFiles: [],
+    loadingFiles: false,
     progressMap: {},
     statusMap: {},
   },
-
   reducers: {
     setFiles: (state, action) => {
       state.files = action.payload;
@@ -117,6 +145,26 @@ const FileSlice = createSlice({
       .addCase(completeUpload.rejected, (state, action) => {
         state.uploading = false;
         state.error = action.payload;
+      })
+
+      .addCase(fetchUserFiles.pending, (state) => {
+        state.loadingFiles = true;
+      })
+
+      .addCase(fetchUserFiles.fulfilled, (state, action) => {
+        console.log("REDUX PAYLOAD:", action.payload);
+
+        state.loadingFiles = false;
+        state.userFiles = action.payload || [];
+      })
+
+      .addCase(fetchUserFiles.rejected, (state, action) => {
+        state.loadingFiles = false;
+        state.error = action.payload;
+      })
+
+      .addCase(deleteAllFiles.fulfilled, (state) => {
+        state.userFiles = [];
       });
   },
 });

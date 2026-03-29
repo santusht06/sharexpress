@@ -846,6 +846,7 @@ class FileController:
                 Params={
                     "Bucket": MINIO_BUCKET,
                     "Key": storage_key,
+                    "ResponseContentDisposition": "inline",
                 },
                 ExpiresIn=600,
             )
@@ -985,12 +986,53 @@ class File_User:
                 )
 
                 files = await cursor.to_list(length=None)
-                if not files or files is None:
-                    raise HTTPException(status_code=404, detail="FILE NOT FOUND")
+                # if not files or files is None:
+                #     raise HTTPException(status_code=404, detail="FILE NOT FOUND")
 
                 return files
 
             return {"success": True, "message": "API BYPASSED"}
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def delete_all_files_hard(user):
+        try:
+            # 🔐 USER VALIDATION
+            user_id = user["user_id"] if user else None
+
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Unauthorized")
+
+            db = get_db()
+
+            # 🔍 GET ALL FILES FIRST (for storage delete)
+            files_cursor = db.files.find(
+                {"sender_ID": user_id}, {"_id": 0, "storage_key": 1}
+            )
+
+            files = await files_cursor.to_list(length=None)
+
+            if not files:
+                return {"success": True, "message": "No files to delete"}
+
+            for f in files:
+                try:
+                    if f.get("storage_key"):
+                        from core.s3_config import delete_from_storage
+
+                        delete_from_storage(f["storage_key"])
+                except Exception as e:
+                    print("Storage delete failed:", e)
+
+            result = await db.files.delete_many({"sender_ID": user_id})
+
+            return {"success": True, "deleted_count": result.deleted_count}
 
         except HTTPException:
             raise
