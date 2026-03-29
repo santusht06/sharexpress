@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { Merge, QrCode } from "lucide-react";
 import WButton from "../../components/WButton";
@@ -15,6 +15,7 @@ import ActiveSession from "./ActiveSession";
 import { check_session } from "../../store/slices/ShareSessionSlice";
 
 const Session = () => {
+  const fileInputRef = useRef();
   const { loading, success, error, check_loading, check_success, check_error } =
     useSelector((state) => state.session);
 
@@ -65,21 +66,38 @@ const Session = () => {
   };
 
   const handleQRUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
+    const toastId = toast.loading("Scanning QR...");
+
     try {
+      // ✅ direct scan (no image conversion needed)
       const result = await QrScanner.scanImage(file, {
         returnDetailedScanResult: true,
       });
 
-      const token = result.data;
+      const token = result?.data;
+      if (!token) throw new Error();
 
       dispatch(clearReceiver());
+      await dispatch(ResolveQR(token)).unwrap();
 
-      await dispatch(ResolveQR(token));
-    } catch {
-      toast.error("Invalid QR image");
+      toast.update(toastId, {
+        render: "QR scanned successfully",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    } catch (err) {
+      console.log(err);
+
+      toast.update(toastId, {
+        render: "Invalid QR",
+        type: "error",
+        isLoading: false,
+        autoClose: 2000,
+      });
     }
 
     e.target.value = "";
@@ -133,16 +151,17 @@ const Session = () => {
                   />
                 </div>
 
-                <label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleQRUpload}
-                    className="hidden"
-                  />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleQRUpload}
+                  className="hidden"
+                />
 
+                <div onClick={() => fileInputRef.current?.click()}>
                   <WButton text={"Upload QR"} Font_extralight />
-                </label>
+                </div>
               </div>
 
               {/* CAMERA */}

@@ -37,15 +37,27 @@ const UploadModal = ({ onClose }) => {
   // 🚫 FILTER
   const filterValidFiles = (arr) => {
     const valid = [];
-    const rejected = [];
+    const rejectedSize = [];
+    const rejectedEmpty = [];
 
     arr.forEach((f) => {
-      if (f.size <= MAX_SIZE) valid.push(f);
-      else rejected.push(f);
+      if (f.size === 0) {
+        rejectedEmpty.push(f);
+      } else if (f.size > MAX_SIZE) {
+        rejectedSize.push(f);
+      } else {
+        valid.push(f);
+      }
     });
 
-    if (rejected.length) {
-      toast.error(`${rejected.length} file(s) exceed 20MB`);
+    // 🚫 EMPTY FILES
+    if (rejectedEmpty.length) {
+      toast.error(`${rejectedEmpty.length} empty file(s) removed`);
+    }
+
+    // 🚫 TOO LARGE FILES
+    if (rejectedSize.length) {
+      toast.error(`${rejectedSize.length} file(s) exceed 20MB`);
     }
 
     return valid;
@@ -118,7 +130,9 @@ const UploadModal = ({ onClose }) => {
 
       setUploading(true);
 
-      const pendingFiles = pendingIndexes.map((i) => localFiles[i]);
+      const pendingFiles = pendingIndexes
+        .map((i) => localFiles[i])
+        .filter((f) => f && f.size > 0);
 
       const res = await dispatch(initUpload(pendingFiles)).unwrap();
 
@@ -181,16 +195,27 @@ const UploadModal = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
-      <div className="w-[420px] bg-[#171717] border border-[#ffffff12] rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
+      <div className="w-[440px] bg-[#171717] border border-[#ffffff12] rounded-2xl shadow-2xl p-6 flex flex-col gap-5">
         {/* HEADER */}
         <div className="flex justify-between items-center">
-          <h2 className="text-white text-sm">Upload Files</h2>
-          <button onClick={onClose} className="text-[#6a6a6a]">
+          <div className="flex flex-col">
+            <h2 className="text-white text-[15px] font-medium tracking-wide">
+              Upload Files
+            </h2>
+            <span className="text-[11px] text-[#6a6a6a]">
+              {files.length} file{files.length !== 1 && "s"}
+            </span>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="text-[#6a6a6a] hover:text-white transition text-sm"
+          >
             ✕
           </button>
         </div>
 
-        {/* DROP */}
+        {/* DROP ZONE */}
         <label
           onDragOver={(e) => {
             e.preventDefault();
@@ -198,56 +223,94 @@ const UploadModal = ({ onClose }) => {
           }}
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
-          className={`p-6 border rounded-xl text-center cursor-pointer transition ${
+          className={`p-7 text-center cursor-pointer border rounded-xl transition-all duration-300 ${
             dragActive
-              ? "border-green-400 bg-green-400/10"
-              : "border-[#ffffff20]"
+              ? "border-green-400 bg-green-400/10 shadow-[0_0_20px_rgba(34,197,94,0.2)]"
+              : "border-[#ffffff15] hover:border-white/40"
           }`}
         >
-          <p className="text-xs text-gray-400">
-            Drag & drop or click to browse
+          <p className="text-sm text-[#d1d1d1] font-light">
+            Drag & drop files here
           </p>
+
+          <p className="text-[11px] text-[#6a6a6a] mt-1">
+            or click to browse • Max 20MB
+          </p>
+
           <input type="file" multiple onChange={handleChange} hidden />
         </label>
 
         {/* CLEAR */}
         {files.length > 0 && !uploading && (
-          <button
-            onClick={handleRemoveAll}
-            className="text-[10px] text-red-400 text-right"
-          >
-            Clear all
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={handleRemoveAll}
+              className="text-[11px] text-red-400 hover:text-red-300 transition"
+            >
+              Clear all
+            </button>
+          </div>
         )}
 
-        {/* FILES */}
-        <div className="flex flex-col gap-3 max-h-[220px] overflow-y-auto">
+        {/* FILE LIST */}
+        <div className="flex flex-col gap-2 max-h-[240px] overflow-y-auto pr-1">
           {files.map((file, i) => {
             const status = statusMap[i];
+            const progress = progressMap[i] || 0;
 
             return (
-              <div key={i} className="bg-[#1f1f1f] p-3 rounded-lg">
-                <div className="flex justify-between">
-                  <div>
-                    <p className="text-xs text-white">{file.name}</p>
-                    <p className="text-[10px] text-gray-500">
-                      {formatSize(file.size)}
+              <div
+                key={i}
+                className="group bg-[#1f1f1f] border border-[#ffffff08] rounded-lg px-3 py-2 transition hover:border-white/20"
+              >
+                {/* TOP */}
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col max-w-[70%]">
+                    <p className="text-[12px] text-white truncate">
+                      {file.name}
                     </p>
+
+                    <span className="text-[10px] text-[#6a6a6a]">
+                      {formatSize(file.size)}
+                    </span>
                   </div>
 
-                  <span className="text-[10px] text-green-400">
-                    {status === "done"
-                      ? "✔ Uploaded"
-                      : status === "uploading"
-                        ? "Uploading..."
-                        : `${progressMap[i] || 0}%`}
-                  </span>
+                  {/* STATUS */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[10px] ${
+                        status === "done"
+                          ? "text-green-400"
+                          : status === "uploading"
+                            ? "text-yellow-400"
+                            : "text-[#8a8a8a]"
+                      }`}
+                    >
+                      {status === "done"
+                        ? "Uploaded"
+                        : status === "uploading"
+                          ? "Uploading"
+                          : `${progress}%`}
+                    </span>
+
+                    {!uploading && status !== "done" && (
+                      <button
+                        onClick={() => handleRemoveFile(i)}
+                        className="text-[#6a6a6a] hover:text-red-400 transition text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="h-[5px] bg-[#2a2a2a] mt-2 rounded">
+                {/* PROGRESS BAR */}
+                <div className="mt-2 h-[4px] bg-[#2a2a2a] rounded overflow-hidden">
                   <div
-                    className="h-full bg-green-400 transition-all"
-                    style={{ width: `${progressMap[i] || 0}%` }}
+                    className={`h-full transition-all duration-300 ${
+                      status === "done" ? "bg-green-400" : "bg-green-400"
+                    }`}
+                    style={{ width: `${progress}%` }}
                   />
                 </div>
               </div>
@@ -256,9 +319,12 @@ const UploadModal = ({ onClose }) => {
         </div>
 
         {/* FOOTER */}
-        <div className="flex justify-between items-center">
-          <button onClick={onClose} className="text-xs text-gray-400">
-            Close
+        <div className="flex justify-between items-center pt-2">
+          <button
+            onClick={onClose}
+            className="text-[11px] text-[#6a6a6a] hover:text-white transition"
+          >
+            Cancel
           </button>
 
           <WButton
