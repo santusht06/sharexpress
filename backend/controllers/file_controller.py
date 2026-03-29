@@ -846,6 +846,7 @@ class FileController:
                 Params={
                     "Bucket": MINIO_BUCKET,
                     "Key": storage_key,
+                    "ResponseContentDisposition": "inline",
                 },
                 ExpiresIn=600,
             )
@@ -985,8 +986,8 @@ class File_User:
                 )
 
                 files = await cursor.to_list(length=None)
-                if not files or files is None:
-                    raise HTTPException(status_code=404, detail="FILE NOT FOUND")
+                # if not files or files is None:
+                #     raise HTTPException(status_code=404, detail="FILE NOT FOUND")
 
                 return files
 
@@ -1025,7 +1026,7 @@ class File_User:
                     if f.get("storage_key"):
                         from core.s3_config import delete_from_storage
 
-                        await delete_from_storage(f["storage_key"])
+                        delete_from_storage(f["storage_key"])
                 except Exception as e:
                     print("Storage delete failed:", e)
 

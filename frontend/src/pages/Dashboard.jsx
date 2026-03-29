@@ -173,7 +173,7 @@ const Dashboard = () => {
 
           {/* PROFILE DROPDOWN */}
           {isOpenProfile && (
-            <div ref={dropdownRef} className="absolute bottom-0 left-55 z-50">
+            <div ref={dropdownRef} className="absolute bottom-0 left-55 z-1000">
               <SettingsProfile />
             </div>
           )}
