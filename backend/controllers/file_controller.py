@@ -986,8 +986,8 @@ class File_User:
                 )
 
                 files = await cursor.to_list(length=None)
-                # if not files or files is None:
-                #     raise HTTPException(status_code=404, detail="FILE NOT FOUND")
+                if not files or files is None:
+                    raise HTTPException(status_code=404, detail="FILE NOT FOUND")
 
                 return files
 
