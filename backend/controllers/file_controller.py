@@ -814,20 +814,16 @@ class FileController:
             raise HTTPException(status_code=500, detail="Failed to list files")
 
     @async_retry(max_attempts=3, delay=0.5, exceptions=(ClientError, BotoCoreError))
-    async def generate_download_url(
-        self, file_id: str, session: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def generate_download_url(self, user, file_id: str) -> Dict[str, Any]:
         """Generate secure presigned download URL"""
 
-        # 1️⃣ Validate session
-        if not session or not session.get("sharing_session_ID"):
-            raise HTTPException(status_code=401, detail="Invalid session")
+        user_id = user["user_id"] if user else None
 
         # 2️⃣ Fetch file metadata from DB
         file_doc = await self.db.files.find_one(
             {
                 "file_id": file_id,
-                "sharing_session_id": session["sharing_session_ID"],
+                "sender_ID": user_id,
                 "is_deleted": False,
             }
         )
@@ -986,8 +982,8 @@ class File_User:
                 )
 
                 files = await cursor.to_list(length=None)
-                # if not files or files is None:
-                #     raise HTTPException(status_code=404, detail="FILE NOT FOUND")
+                if not files or files is None:
+                    raise HTTPException(status_code=404, detail="FILE NOT FOUND")
 
                 return files
 

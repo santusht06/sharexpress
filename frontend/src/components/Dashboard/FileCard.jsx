@@ -1,8 +1,3 @@
-// FileCard.jsx
-// React.memo: skips re-render on view toggle if props unchanged
-// No iframes rendered here — thumbnails only
-// Click → PreviewModal (iframes only mount there)
-
 import React, { useState, memo } from "react";
 import { Download, Trash2, MoreVertical } from "lucide-react";
 import useInViewUrl, { getFileType } from "../../helpers/Useinviewurl";

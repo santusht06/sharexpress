@@ -43,7 +43,7 @@ export const fetchUserFiles = createAsyncThunk(
 
       console.log("API RESPONSE:", res.data);
 
-      return res.data || []; // ✅ FIXED
+      return res.data || [];
     } catch (err) {
       return rejectWithValue(err.response?.data || "Fetch failed");
     }

@@ -134,28 +134,16 @@ async def complete_upload(
     response_model=DownloadResponse,
     status_code=status.HTTP_200_OK,
 )
-async def download_file(
-    file_id: str,
-    session: Dict[str, Any] = Depends(verify_x_sharing_token),
-):
+async def download_file(file_id: str, user: dict = Depends(check_auth_middleware)):
     """Generate presigned download URL"""
     try:
-        # Check download permission
-        if not session.get("permissions", {}).get("can_download", True):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Download permission denied for this session",
-            )
-
         controller = FileController()
 
-        logger.info(
-            f"Download request: file_id={file_id}, "
-            f"session={session.get('sharing_session_ID')}"
-        )
+        logger.info(f"Download request: file_id={file_id}, ")
 
         result = await controller.generate_download_url(
-            file_id=file_id, session=session
+            user,
+            file_id=file_id,
         )
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)

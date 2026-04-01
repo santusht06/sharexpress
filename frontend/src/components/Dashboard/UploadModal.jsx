@@ -106,7 +106,6 @@ const UploadModal = ({ onClose }) => {
     try {
       if (!localFiles.length) return;
 
-      // 🔥 find pending indexes
       const pendingIndexes = files
         .map((_, i) => i)
         .filter((i) => statusMap[i] !== "done");
@@ -118,24 +117,25 @@ const UploadModal = ({ onClose }) => {
 
       setUploading(true);
 
-      const pendingFiles = pendingIndexes.map((i) => localFiles[i]);
+      const pendingFiles = pendingIndexes.map((i) => ({
+        file: localFiles[i],
+        index: i,
+      }));
 
-      const res = await dispatch(initUpload(pendingFiles)).unwrap();
+      const res = await dispatch(
+        initUpload(pendingFiles.map((f) => f.file)),
+      ).unwrap();
 
       const uploaded = [];
 
       await Promise.all(
         res.files.map((meta, idx) => {
-          const actualIndex = pendingIndexes[idx];
+          const { file, index } = pendingFiles[idx];
 
-          dispatch(setFileStatus({ index: actualIndex, status: "uploading" }));
+          dispatch(setFileStatus({ index, status: "uploading" }));
 
-          return uploadWithProgress(
-            meta.upload_url,
-            localFiles[actualIndex],
-            actualIndex,
-          ).then(() => {
-            dispatch(setFileStatus({ index: actualIndex, status: "done" }));
+          return uploadWithProgress(meta.upload_url, file, index).then(() => {
+            dispatch(setFileStatus({ index, status: "done" }));
 
             uploaded.push({
               file_id: meta.file_id,
@@ -147,11 +147,13 @@ const UploadModal = ({ onClose }) => {
         }),
       );
 
+      console.log("FINAL UPLOAD PAYLOAD:", uploaded); // 🔍 debug
+
       await dispatch(completeUpload(uploaded)).unwrap();
 
       toast.success("Upload complete 🚀");
     } catch (err) {
-      console.error(err);
+      console.error("UPLOAD ERROR:", err);
       toast.error("Upload failed");
     } finally {
       setUploading(false);
