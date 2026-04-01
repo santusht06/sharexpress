@@ -11,6 +11,7 @@ import { Grid, List } from "lucide-react";
 import { toast } from "react-toastify";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import { clearUrlCache, removeCachedUrl } from "../../helpers/urlCache";
+import FileCardSkeleton from "./FileCardSkeleton";
 
 const DashboardFiles = () => {
   const dispatch = useDispatch();
@@ -89,7 +90,17 @@ const DashboardFiles = () => {
         </div>
 
         {loadingFiles && (
-          <p className="text-[#7a7a7a] text-sm">Loading files...</p>
+          <div
+            className={
+              view === "grid"
+                ? "grid grid-cols-2 md:grid-cols-3 gap-4"
+                : "flex flex-col"
+            }
+          >
+            {Array.from({ length: 6 }).map((_, i) => (
+              <FileCardSkeleton key={i} view={view} />
+            ))}
+          </div>
         )}
         {!loadingFiles && userFiles.length === 0 && <NofileFound />}
 
