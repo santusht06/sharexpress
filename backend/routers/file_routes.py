@@ -104,6 +104,7 @@ async def complete_upload(
 ):
     """Complete file upload after S3 upload"""
     try:
+        print("complete upload route response = ", payload)
         controller = FileController()
 
         logger.info(
