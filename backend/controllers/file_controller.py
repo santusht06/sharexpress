@@ -633,6 +633,8 @@ class FileController:
             if failed_files:
                 response["failed_files"] = failed_files
 
+            print("complete upload response = ", response)
+
             return response
 
         except HTTPException:
