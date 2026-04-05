@@ -45,7 +45,6 @@ const getFileType = (filename = "") => {
 const getExt = (filename = "") =>
   filename.split(".").pop()?.toUpperCase() || "FILE";
 
-// ─── Lazy pdfjs singleton ──────────────────────────────────────────────────────
 let pdfjsPromise = null;
 const getPdfJs = () => {
   if (!pdfjsPromise) {
@@ -60,7 +59,6 @@ const getPdfJs = () => {
   return pdfjsPromise;
 };
 
-// ─── PDF canvas thumbnail ──────────────────────────────────────────────────────
 const PdfCanvasThumb = ({ url }) => {
   const canvasRef = useRef(null);
   const [rendered, setRendered] = useState(false);
@@ -110,7 +108,9 @@ const PdfCanvasThumb = ({ url }) => {
       } finally {
         try {
           pdfDoc?.destroy();
-        } catch (_) {}
+        } catch (err) {
+          err;
+        }
         pdfDoc = null;
         renderTask = null;
       }
@@ -574,7 +574,7 @@ const UploadModal = ({ onClose }) => {
       // ⚡ PARALLEL WORKERS
       await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
 
-      toast.success("All files uploaded 🚀");
+      toast.success("All files uploaded");
       dispatch(fetchUserFiles());
       setLocalFiles([]);
     } catch (err) {
@@ -599,6 +599,8 @@ const UploadModal = ({ onClose }) => {
       toast.error("Failed to copy links");
     }
   };
+
+  console.log(selectedFiles);
 
   const hasPending = files.some((_, i) => statusMap[i] !== "done");
 
