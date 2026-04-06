@@ -14,11 +14,15 @@ import { configureStore } from "@reduxjs/toolkit";
 import { authReducer } from "./slices/authSlice";
 import { QRreducer } from "./slices/QrSlice";
 import { SessionReducer } from "./slices/ShareSessionSlice";
+import { FileReducer } from "./slices/FileSlices";
+import { share_FilesSlice } from "./slices/shareFiles";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     QR: QRreducer,
     session: SessionReducer,
+    files: FileReducer,
+    shareFiles: share_FilesSlice,
   },
 });

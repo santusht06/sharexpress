@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, status, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
+from utils.JWT import check_auth_middleware
 
 from controllers.file_controller import (
     FileController,
@@ -25,6 +26,8 @@ from controllers.file_controller import (
     ValidationError,
     StorageError,
     QuotaExceededError,
+    File_User,
+    sharing_files,
 )
 from middlewares.sharing_token_middleware import verify_x_sharing_token
 from slowapi import Limiter
@@ -102,6 +105,7 @@ async def complete_upload(
 ):
     """Complete file upload after S3 upload"""
     try:
+        print("complete upload route response = ", payload)
         controller = FileController()
 
         logger.info(
@@ -132,28 +136,16 @@ async def complete_upload(
     response_model=DownloadResponse,
     status_code=status.HTTP_200_OK,
 )
-async def download_file(
-    file_id: str,
-    session: Dict[str, Any] = Depends(verify_x_sharing_token),
-):
+async def download_file(file_id: str, user: dict = Depends(check_auth_middleware)):
     """Generate presigned download URL"""
     try:
-        # Check download permission
-        if not session.get("permissions", {}).get("can_download", True):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Download permission denied for this session",
-            )
-
         controller = FileController()
 
-        logger.info(
-            f"Download request: file_id={file_id}, "
-            f"session={session.get('sharing_session_ID')}"
-        )
+        logger.info(f"Download request: file_id={file_id}, ")
 
         result = await controller.generate_download_url(
-            file_id=file_id, session=session
+            user,
+            file_id=file_id,
         )
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
@@ -386,3 +378,32 @@ async def trigger_cleanup():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cleanup failed"
         )
+
+
+@router.get("/user/files")
+async def get_files(user: dict = Depends(check_auth_middleware)):
+    return await File_User.get_files_uploaded_by_users(user)
+
+
+@router.delete("/user/files")
+async def delete_hard(user: dict = Depends(check_auth_middleware)):
+    return await File_User.delete_all_files_hard(user)
+
+
+@router.post("/share")
+async def share_files(
+    data: dict = Body(...),
+    user=Depends(check_auth_middleware),
+):
+
+    qr_token = data.get("qr_token")
+    file_ids = data.get("file_ids")
+
+    if not qr_token or not file_ids:
+        return {"success": False, "message": "Missing data"}
+
+    return await sharing_files.share_files_between_client(
+        qr_token=qr_token,
+        selected_file_ids=file_ids,
+        sender=user,
+    )

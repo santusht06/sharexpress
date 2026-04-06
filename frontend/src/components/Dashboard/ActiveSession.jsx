@@ -1,20 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link2, ShieldCheck, AlertCircle, Power } from "lucide-react";
-// import {
-//   clearSessionState,
-//   revokeSession,
-// } from "../../store/slices/ShareSessionSlice";
 import { toast } from "react-toastify";
 import {
   clearSessionState,
   revokeSession,
 } from "../../store/slices/ShareSessionSlice";
-
+import WButton from "../../components/WButton";
 import { disconnectSocket } from "../../helpers/socket";
+import UploadModal from "./UploadModal";
+
 const ActiveSession = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+
+  const [openModal, setOpenModal] = useState(false);
 
   const {
     sender_name,
@@ -36,6 +36,11 @@ const ActiveSession = () => {
 
   const sender = check_sender_name || sender_name;
   const receiver = check_receiver_name || reciever_name;
+
+  // 🔥 MODAL RENDER
+  if (openModal) {
+    return <UploadModal onClose={() => setOpenModal(false)} />;
+  }
 
   if (loading || check_loading) {
     return (
@@ -75,25 +80,33 @@ const ActiveSession = () => {
         Active Session
       </div>
 
-      {/* SAME CARD (MINIMAL CHANGE) */}
+      {/* CARD */}
       <div className="flex items-center gap-4">
         <div className="h-11 w-11 rounded-full bg-[#202020] flex items-center justify-center text-green-400">
           <ShieldCheck size={18} />
         </div>
 
-        <div className="flex flex-col leading-tight">
-          <p className="text-white text-sm">
-            {sender} ↔ {receiver}
-          </p>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex flex-col leading-tight">
+            <p className="text-white text-sm">
+              {sender} ↔ {receiver}
+            </p>
 
-          {/* 🔥 ONLY THIS LINE CHANGED */}
-          <p
-            className={`text-xs mt-1 ${
-              isSender ? "text-green-400" : "text-blue-400"
-            }`}
-          >
-            {isSender ? "You are sending files" : "You are receiving files"}
-          </p>
+            <p
+              className={`text-xs mt-1 ${
+                isSender ? "text-green-400" : "text-blue-400"
+              }`}
+            >
+              {isSender ? "You are sending files" : "You are receiving files"}
+            </p>
+          </div>
+
+          {/* 🔥 SEND FILES BUTTON */}
+          {isSender && (
+            <button onClick={() => setOpenModal(true)}>
+              <WButton Font_extralight={true} text={"Send Files"} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -103,24 +116,18 @@ const ActiveSession = () => {
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
           Session Active
         </span>
-
-        {/* 🔥 SMALL CHANGE */}
-        <span>{isSender ? "Upload enabled" : "Download only"}</span>
       </div>
 
+      {/* TERMINATE */}
       <button
         onClick={async () => {
           try {
             if (isSender) {
-              handleTerminate();
-
+              await handleTerminate();
               disconnectSocket();
-
-              toast.info("Session terminated");
             } else {
               dispatch(clearSessionState());
               disconnectSocket();
-
               toast.info("Disconnected from session");
             }
           } catch (err) {

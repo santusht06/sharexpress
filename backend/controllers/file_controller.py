@@ -415,7 +415,6 @@ class FileController:
         start_time = time.time()
 
         try:
-            # Check rate limit
             rate_key = f"{session['sender_ID']}:{session['sharing_session_ID']}"
             if not await self.rate_limiter.acquire(rate_key):
                 raise HTTPException(
@@ -423,7 +422,6 @@ class FileController:
                     detail="Rate limit exceeded. Please wait before uploading more files.",
                 )
 
-            # Validate file count
             if len(files) > self.MAX_FILES_PER_REQUEST:
                 raise ValidationError(
                     f"Maximum {self.MAX_FILES_PER_REQUEST} files allowed per request"
@@ -432,7 +430,6 @@ class FileController:
             if not files:
                 raise ValidationError("No files provided")
 
-            # Validate total batch size
             total_size = sum(f.size for f in files)
             max_batch_size = self.MAX_FILE_SIZE * self.MAX_FILES_PER_REQUEST
 
@@ -442,7 +439,6 @@ class FileController:
                     f"limit of {max_batch_size / 1024 / 1024:.2f}MB"
                 )
 
-            # Check quota
             await self.quota_manager.check_quota(
                 user_id=session["sender_ID"],
                 session_id=session["sharing_session_ID"],
@@ -637,6 +633,8 @@ class FileController:
             if failed_files:
                 response["failed_files"] = failed_files
 
+            print("complete upload response = ", response)
+
             return response
 
         except HTTPException:
@@ -818,20 +816,16 @@ class FileController:
             raise HTTPException(status_code=500, detail="Failed to list files")
 
     @async_retry(max_attempts=3, delay=0.5, exceptions=(ClientError, BotoCoreError))
-    async def generate_download_url(
-        self, file_id: str, session: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def generate_download_url(self, user, file_id: str) -> Dict[str, Any]:
         """Generate secure presigned download URL"""
 
-        # 1️⃣ Validate session
-        if not session or not session.get("sharing_session_ID"):
-            raise HTTPException(status_code=401, detail="Invalid session")
+        user_id = user["user_id"] if user else None
 
         # 2️⃣ Fetch file metadata from DB
         file_doc = await self.db.files.find_one(
             {
                 "file_id": file_id,
-                "sharing_session_id": session["sharing_session_ID"],
+                "sender_ID": user_id,
                 "is_deleted": False,
             }
         )
@@ -850,6 +844,7 @@ class FileController:
                 Params={
                     "Bucket": MINIO_BUCKET,
                     "Key": storage_key,
+                    "ResponseContentDisposition": "inline",
                 },
                 ExpiresIn=600,
             )
@@ -954,3 +949,165 @@ class BackgroundCleaner:
     def stop(self):
         """Stop background cleanup task"""
         self.running = False
+
+
+class File_User:
+    @staticmethod
+    async def get_files_uploaded_by_users(user):
+        try:
+            # FIND IN DB
+
+            # GET USER ID FIRST
+
+            user_id = user["user_id"] if user else None
+
+            if user_id is None:
+                raise HTTPException(status_code=404, detail="USER ID NOT FOUND")
+
+            # EXTRACT USER ID AND FIND FILES UPLOADED BY THIS USER IN DB
+
+            if user:
+                from core.database import get_db
+
+                db = get_db()
+
+                cursor = db.files.find(
+                    {"sender_ID": user_id, "is_deleted": False},
+                    {
+                        "_id": 0,
+                        "file_id": 1,
+                        "filename": 1,
+                        "size": 1,
+                        "created_at": 1,
+                        "storage_key": 1,
+                    },
+                )
+
+                files = await cursor.to_list(length=None)
+                if not files or files is None:
+                    raise HTTPException(status_code=404, detail="FILE NOT FOUND")
+
+                return files
+
+            return {"success": True, "message": "API BYPASSED"}
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def delete_all_files_hard(user):
+        try:
+            # 🔐 USER VALIDATION
+            user_id = user["user_id"] if user else None
+
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Unauthorized")
+
+            db = get_db()
+
+            # 🔍 GET ALL FILES FIRST (for storage delete)
+            files_cursor = db.files.find(
+                {"sender_ID": user_id}, {"_id": 0, "storage_key": 1}
+            )
+
+            files = await files_cursor.to_list(length=None)
+
+            if not files:
+                return {"success": True, "message": "No files to delete"}
+
+            for f in files:
+                try:
+                    if f.get("storage_key"):
+                        from core.s3_config import delete_from_storage
+
+                        delete_from_storage(f["storage_key"])
+                except Exception as e:
+                    print("Storage delete failed:", e)
+
+            result = await db.files.delete_many({"sender_ID": user_id})
+
+            return {"success": True, "deleted_count": result.deleted_count}
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+
+class sharing_files:
+    @staticmethod
+    async def share_files_between_client(qr_token, selected_file_ids, sender):
+        try:
+            db = get_db()
+
+            # 🔐 Validate sender
+            sender_id = sender.get("user_id")
+            if not sender_id:
+                raise HTTPException(status_code=401, detail="Unauthorized")
+
+            # 🔍 1. Resolve QR → receiver
+            session = await db.sharing_sessions.find_one({"qr_token": qr_token})
+
+            if not session:
+                raise HTTPException(status_code=404, detail="Invalid QR")
+
+            receiver_id = session.get("receiver_ID")
+
+            if not receiver_id:
+                raise HTTPException(status_code=400, detail="Receiver not found")
+
+            # 🔍 2. Fetch selected files of sender
+            files = await db.files.find(
+                {
+                    "file_id": {"$in": selected_file_ids},
+                    "sender_ID": sender_id,
+                    "is_deleted": False,
+                }
+            ).to_list(length=None)
+
+            if not files:
+                raise HTTPException(status_code=404, detail="Files not found")
+
+            # ⚡ 3. Create shared copies (NO STORAGE COPY)
+            new_docs = []
+
+            for f in files:
+                new_docs.append(
+                    {
+                        "file_id": str(uuid4()),
+                        "filename": f["filename"],
+                        "size": f["size"],
+                        "mime_type": f.get("mime_type"),
+                        "storage_key": f["storage_key"],  # 🔥 SAME KEY
+                        "sender_ID": receiver_id,  # new owner
+                        "original_owner": sender_id,
+                        "is_shared": True,
+                        "shared_from": sender_id,
+                        "sharing_session_id": session["sharing_session_ID"],
+                        "is_deleted": False,
+                        "created_at": datetime.utcnow(),
+                        "updated_at": datetime.utcnow(),
+                    }
+                )
+
+            # 💾 4. Bulk insert
+            if new_docs:
+                await db.files.insert_many(new_docs)
+
+            return {
+                "success": True,
+                "shared_count": len(new_docs),
+                "receiver_id": receiver_id,
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
