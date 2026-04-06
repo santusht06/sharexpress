@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, status, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
@@ -27,6 +27,7 @@ from controllers.file_controller import (
     StorageError,
     QuotaExceededError,
     File_User,
+    sharing_files,
 )
 from middlewares.sharing_token_middleware import verify_x_sharing_token
 from slowapi import Limiter
@@ -387,3 +388,22 @@ async def get_files(user: dict = Depends(check_auth_middleware)):
 @router.delete("/user/files")
 async def delete_hard(user: dict = Depends(check_auth_middleware)):
     return await File_User.delete_all_files_hard(user)
+
+
+@router.post("/share")
+async def share_files(
+    data: dict = Body(...),
+    user=Depends(check_auth_middleware),
+):
+
+    qr_token = data.get("qr_token")
+    file_ids = data.get("file_ids")
+
+    if not qr_token or not file_ids:
+        return {"success": False, "message": "Missing data"}
+
+    return await sharing_files.share_files_between_client(
+        qr_token=qr_token,
+        selected_file_ids=file_ids,
+        sender=user,
+    )

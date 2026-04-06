@@ -180,6 +180,7 @@ class SharingController:
                     "receiver_ID": receiver_id,
                     "receiver_type": receiver_type,
                     "reciever_name": reciever_name,
+                    "receiver_qr_token": qr_token.qr_token,
                 }
 
             session_data = SharingSession(
@@ -227,6 +228,7 @@ class SharingController:
                 "receiver_ID": receiver_id,
                 "receiver_type": receiver_type,
                 "reciever_name": reciever_name,
+                "receiver_qr_token": qr_token.qr_token,
             }
 
         except HTTPException:

@@ -1038,3 +1038,76 @@ class File_User:
         except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+
+class sharing_files:
+    @staticmethod
+    async def share_files_between_client(qr_token, selected_file_ids, sender):
+        try:
+            db = get_db()
+
+            # 🔐 Validate sender
+            sender_id = sender.get("user_id")
+            if not sender_id:
+                raise HTTPException(status_code=401, detail="Unauthorized")
+
+            # 🔍 1. Resolve QR → receiver
+            session = await db.sharing_sessions.find_one({"qr_token": qr_token})
+
+            if not session:
+                raise HTTPException(status_code=404, detail="Invalid QR")
+
+            receiver_id = session.get("receiver_ID")
+
+            if not receiver_id:
+                raise HTTPException(status_code=400, detail="Receiver not found")
+
+            # 🔍 2. Fetch selected files of sender
+            files = await db.files.find(
+                {
+                    "file_id": {"$in": selected_file_ids},
+                    "sender_ID": sender_id,
+                    "is_deleted": False,
+                }
+            ).to_list(length=None)
+
+            if not files:
+                raise HTTPException(status_code=404, detail="Files not found")
+
+            # ⚡ 3. Create shared copies (NO STORAGE COPY)
+            new_docs = []
+
+            for f in files:
+                new_docs.append(
+                    {
+                        "file_id": str(uuid4()),
+                        "filename": f["filename"],
+                        "size": f["size"],
+                        "mime_type": f.get("mime_type"),
+                        "storage_key": f["storage_key"],  # 🔥 SAME KEY
+                        "sender_ID": receiver_id,  # new owner
+                        "original_owner": sender_id,
+                        "is_shared": True,
+                        "shared_from": sender_id,
+                        "sharing_session_id": session["sharing_session_ID"],
+                        "is_deleted": False,
+                        "created_at": datetime.utcnow(),
+                        "updated_at": datetime.utcnow(),
+                    }
+                )
+
+            # 💾 4. Bulk insert
+            if new_docs:
+                await db.files.insert_many(new_docs)
+
+            return {
+                "success": True,
+                "shared_count": len(new_docs),
+                "receiver_id": receiver_id,
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
