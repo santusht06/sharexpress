@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { shareFiles, resetShareState } from "../../store/slices/shareFiles";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchUserFiles,
@@ -24,6 +25,7 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
+import { BsSend } from "react-icons/bs";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatSize = (size) => {
@@ -153,9 +155,6 @@ const PdfCanvasThumb = ({ url }) => {
   );
 };
 
-// ─── DOC thumbnail — styled icon, no iframe ────────────────────────────────────
-// There is no client-side DOCX renderer — Google Docs Viewer needs a public URL
-// and works only in iframes. For thumbnails, a rich icon is the honest approach.
 const DocThumb = ({ filename }) => {
   const ext = getExt(filename);
   return (
@@ -198,6 +197,12 @@ const OtherThumb = ({ filename }) => {
 // Lazy-fetch presigned URL via IntersectionObserver + urlCache
 // Then route to correct renderer by file type
 const FileThumbnail = ({ file }) => {
+  const {
+    loading: sharingLoading,
+    success: shareSuccess,
+    error: shareError,
+  } = useSelector((state) => state.shareFiles);
+
   const type = getFileType(file.filename);
 
   const [url, setUrl] = useState(() => getCachedUrl(file.file_id));
@@ -247,7 +252,7 @@ const FileThumbnail = ({ file }) => {
 
     observerRef.current.observe(el);
     return () => observerRef.current?.disconnect();
-  }, [file.file_id, type]);
+  }, [file.file_id, type, url]);
 
   return (
     <div ref={elRef} className="w-full h-full">
@@ -586,17 +591,27 @@ const UploadModal = ({ onClose }) => {
   };
 
   const handleShareSelected = async () => {
-    const links = selectedFiles.map(
-      (f) => `${window.location.origin}/share/${f.file_id}`,
-    );
+    if (!selectedFiles.length) return;
+
+    const qr_token = localStorage.getItem("qr_token");
+
+    if (!qr_token) {
+      toast.error("QR session not found");
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(links.join("\n"));
-      toast.success(
-        `${links.length} link${links.length > 1 ? "s" : ""} copied!`,
-      );
+      await dispatch(
+        shareFiles({
+          qr_token,
+          file_ids: selectedFiles.map((f) => f.file_id),
+        }),
+      ).unwrap();
+
+      toast.success("Files shared 🚀");
       setSelectedFiles([]);
-    } catch {
-      toast.error("Failed to copy links");
+    } catch (err) {
+      toast.error(err || "Share failed");
     }
   };
 
@@ -935,11 +950,11 @@ const UploadModal = ({ onClose }) => {
                 onClick={handleShareSelected}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-black text-[11px] font-medium rounded-lg hover:bg-white/90 transition active:scale-95"
               >
-                <Share2 size={11} />
+                <BsSend size={11} />
                 Share{" "}
                 {selectedFiles.length > 1
                   ? `${selectedFiles.length} files`
-                  : "link"}
+                  : "File"}
               </button>
             )}
           </div>
