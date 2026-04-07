@@ -397,6 +397,10 @@ const UploadModal = ({ onClose }) => {
   const [dragActive, setDragActive] = useState(false);
   const dragCounterRef = useRef(0);
 
+  const { receiver_qr_token } = useSelector((state) => state.session);
+
+  console.log("QR = ", receiver_qr_token);
+
   useEffect(() => {
     dispatch(fetchUserFiles());
   }, [dispatch]);
@@ -593,28 +597,27 @@ const UploadModal = ({ onClose }) => {
   const handleShareSelected = async () => {
     if (!selectedFiles.length) return;
 
-    const qr_token = localStorage.getItem("qr_token");
-
-    if (!qr_token) {
-      toast.error("QR session not found");
+    if (!receiver_qr_token) {
+      toast.error("No active receiver session");
       return;
     }
 
     try {
       await dispatch(
         shareFiles({
-          qr_token,
+          qr_token: receiver_qr_token, // ✅ FIXED
           file_ids: selectedFiles.map((f) => f.file_id),
         }),
       ).unwrap();
 
-      toast.success("Files shared 🚀");
+      toast.success("Files shared");
       setSelectedFiles([]);
+
+      dispatch(resetShareState()); // optional cleanup
     } catch (err) {
       toast.error(err || "Share failed");
     }
   };
-
   console.log(selectedFiles);
 
   const hasPending = files.some((_, i) => statusMap[i] !== "done");
