@@ -8,7 +8,9 @@ export const SessionCreate = createAsyncThunk(
       const res = await api.post("/share/create", { qr_token });
       return res.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || "Session Creation failed");
+      return rejectWithValue(
+        error.response?.data?.detail || "Session Creation failed",
+      );
     }
   },
 );
@@ -20,7 +22,9 @@ export const revokeSession = createAsyncThunk(
       const res = await api.delete("/share/revoke");
       return res.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || "SESSION REVOKE FAILED");
+      return rejectWithValue(
+        error.response?.data?.detail || "SESSION REVOKE FAILED",
+      );
     }
   },
 );
@@ -32,7 +36,9 @@ export const check_session = createAsyncThunk(
       const res = await api.get("/share/check");
       return res.data;
     } catch (error) {
-      return rejectWithValue(error);
+      return rejectWithValue(
+        error.response?.data?.detail || "SESSION CHECK FAILED",
+      );
     }
   },
 );
@@ -42,7 +48,7 @@ export const SessionSlice = createSlice({
 
   initialState: {
     loading: false,
-    error: false,
+    error: null,
 
     check_loading: false,
     check_success: false,
@@ -55,12 +61,17 @@ export const SessionSlice = createSlice({
     mode: null,
     sharing_token: null,
     session_id: null,
+
     sender_name: null,
     sender_type: null,
     sender_ID: null,
+
     receiver_ID: null,
     receiver_type: null,
     reciever_name: null,
+
+    receiver_QR: null, // existing (unchanged)
+    receiver_qr_token: null, // ✅ NEW
   },
 
   reducers: {
@@ -73,6 +84,9 @@ export const SessionSlice = createSlice({
       state.mode = null;
       state.sender_ID = null;
       state.receiver_ID = null;
+
+      state.receiver_QR = null;
+      state.receiver_qr_token = null; // ✅ reset added
     },
 
     socketEvent: (state, action) => {
@@ -80,8 +94,8 @@ export const SessionSlice = createSlice({
 
       if (data.type === "CONNECTED") {
         state.check_success = true;
-        state.check_sender_name = data.sender_name;
-        state.check_receiver_name = data.receiver_name;
+        state.check_sender_name = data.sender_name || null;
+        state.check_receiver_name = data.receiver_name || null;
         state.check_mode = "ACTIVE";
       }
 
@@ -90,50 +104,65 @@ export const SessionSlice = createSlice({
       }
 
       if (data.type === "RESTORE") {
-        state.check_sender_name = data.sender_name;
-        state.check_receiver_name = data.receiver_name;
-        state.check_mode = data.status;
+        state.check_sender_name = data.sender_name || null;
+        state.check_receiver_name = data.receiver_name || null;
+        state.check_mode = data.status || null;
       }
     },
   },
+
   extraReducers: (builder) => {
+    // CREATE SESSION
     builder.addCase(SessionCreate.pending, (state) => {
       state.loading = true;
     });
+
     builder.addCase(SessionCreate.fulfilled, (state, action) => {
+      const payload = action.payload;
+
       state.loading = false;
       state.success = true;
       state.error = null;
-      state.mode = action.payload.mode;
 
-      state.sharing_token = action.payload.sharing_token;
-      state.sender_name = action.payload.sender_name;
-      state.sender_type = action.payload.sender_type;
-      state.sender_ID = action.payload.sender_ID;
+      state.mode = payload.mode;
+      state.sharing_token = payload.sharing_token;
+      state.session_id = payload.session_id;
 
-      state.receiver_ID = action.payload.receiver_ID;
-      state.receiver_type = action.payload.receiver_type;
-      state.reciever_name = action.payload.reciever_name;
+      state.sender_name = payload.sender_name;
+      state.sender_type = payload.sender_type;
+      state.sender_ID = payload.sender_ID;
+
+      state.receiver_ID = payload.receiver_ID;
+      state.receiver_type = payload.receiver_type;
+
+      state.reciever_name =
+        payload.reciever_name || payload.receiver_name || null;
+
+      // ✅ NEW FIELD
+      state.receiver_qr_token = payload.receiver_qr_token || null;
     });
+
     builder.addCase(SessionCreate.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload?.details || "SESSION CREATION FAILED";
+      state.error = action.payload || "SESSION CREATION FAILED";
 
       state.sender_name = null;
       state.sender_type = null;
       state.sender_ID = null;
+
       state.receiver_ID = null;
       state.receiver_type = null;
       state.reciever_name = null;
+      state.receiver_qr_token = null;
     });
 
-    // REVOKE SESSION STATES INITIALIZED HERE
-
+    // REVOKE SESSION
     builder.addCase(revokeSession.pending, (state) => {
       state.loading = true;
       state.success = false;
       state.error = null;
     });
+
     builder.addCase(revokeSession.fulfilled, (state) => {
       state.loading = false;
       state.success = false;
@@ -141,35 +170,45 @@ export const SessionSlice = createSlice({
       state.sender_name = null;
       state.reciever_name = null;
       state.sharing_token = null;
+
       state.check_success = false;
+      state.receiver_qr_token = null;
     });
+
     builder.addCase(revokeSession.rejected, (state, action) => {
       state.loading = false;
       state.success = false;
-      state.error = action.payload?.details || "REVOKE SESSION FAILED";
+      state.error = action.payload || "REVOKE SESSION FAILED";
     });
 
     // CHECK SESSION
-
     builder.addCase(check_session.pending, (state) => {
       state.check_error = null;
       state.check_loading = true;
       state.check_success = false;
+
       state.check_sender_name = null;
       state.check_receiver_name = null;
       state.check_mode = null;
     });
 
     builder.addCase(check_session.fulfilled, (state, action) => {
+      const payload = action.payload;
+
       state.check_error = null;
       state.check_loading = false;
       state.check_success = true;
 
-      state.check_sender_name = action.payload?.sender_name || null;
-      state.check_receiver_name = action.payload?.reciever_name || null;
+      state.check_sender_name = payload?.sender_name || null;
+
+      state.check_receiver_name =
+        payload?.receiver_name || payload?.reciever_name || null;
+
+      state.check_mode = payload?.mode || null;
     });
+
     builder.addCase(check_session.rejected, (state, action) => {
-      state.check_error = action.payload?.error || "ERROR OCCURED";
+      state.check_error = action.payload || "ERROR OCCURRED";
       state.check_loading = false;
       state.check_success = false;
     });

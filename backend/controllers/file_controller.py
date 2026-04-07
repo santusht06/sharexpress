@@ -1052,7 +1052,7 @@ class sharing_files:
                 raise HTTPException(status_code=401, detail="Unauthorized")
 
             # 🔍 1. Resolve QR → receiver
-            session = await db.sharing_sessions.find_one({"qr_token": qr_token})
+            session = await db.sharing_session.find_one({"qr_token": qr_token})
 
             if not session:
                 raise HTTPException(status_code=404, detail="Invalid QR")
