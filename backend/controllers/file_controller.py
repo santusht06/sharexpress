@@ -1111,3 +1111,15 @@ class sharing_files:
         except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+
+    @staticmethod
+    async def create_history_logs(session):
+        try:
+            session
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            print(e)
+            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
