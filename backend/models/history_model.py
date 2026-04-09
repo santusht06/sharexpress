@@ -35,6 +35,10 @@ class TransferHistory(BaseModel):
 
     sharing_session_id: Optional[str] = None
 
+<<<<<<< HEAD
+=======
+    # 📌 Status
+>>>>>>> 67e9495 (HISTORY MODEL SETUP)
     status: str = Field(default="completed", description="pending / completed / failed")
 
     metadata: Optional[dict] = None
