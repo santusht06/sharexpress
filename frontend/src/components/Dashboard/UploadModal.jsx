@@ -944,6 +944,7 @@ const UploadModal = ({ onClose }) => {
                   uploading
                     ? "Uploading..."
                     : `Upload ${files.length > 1 ? `${files.length} files` : "file"}`
+                  // exams
                 }
               />
             )}
