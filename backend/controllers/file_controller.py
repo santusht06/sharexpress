@@ -1122,4 +1122,4 @@ class sharing_files:
 
         except Exception as e:
             print(e)
-            raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
+            raise HTTPException(status_code=400, detail="INTERNAL SERVER ERROR")
