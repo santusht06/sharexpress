@@ -36,6 +36,8 @@ from core.config import MINIO_BUCKET
 from core.permission_engine import PermissionEngine
 from models.history_model import UserMeta, FileMeta, TransferHistory
 
+from bson import ObjectId
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -1052,11 +1054,19 @@ class sharing_files:
             if not sender_id:
                 raise HTTPException(status_code=401, detail="Unauthorized")
 
-            # 🔍 1. Resolve QR → receiver
+            def serialize_mongo(doc):
+                if not doc:
+                    return doc
+                doc["_id"] = str(doc["_id"])
+                return doc
+
             session = await db.sharing_session.find_one({"qr_token": qr_token})
 
             if not session:
                 raise HTTPException(status_code=404, detail="Invalid QR")
+
+            # ✅ FIX
+            session = serialize_mongo(session)
 
             receiver_id = session.get("receiver_ID")
 
@@ -1101,11 +1111,35 @@ class sharing_files:
             if new_docs:
                 await db.files.insert_many(new_docs)
 
-            return {
-                "success": True,
-                "shared_count": len(new_docs),
-                "receiver_id": receiver_id,
-            }
+                def mongo_response(data):
+                    if isinstance(data, ObjectId):
+                        return str(data)
+
+                    elif isinstance(data, datetime):
+                        return data.isoformat()
+
+                    elif isinstance(data, list):
+                        return [mongo_response(item) for item in data]
+
+                    elif isinstance(data, dict):
+                        clean = {}
+                        for key, value in data.items():
+                            if key == "_id":
+                                continue
+                            clean[key] = mongo_response(value)
+                        return clean
+
+                    return data
+
+            return mongo_response(
+                {
+                    "success": True,
+                    "shared_count": len(new_docs),
+                    "receiver_id": receiver_id,
+                    "session": session,
+                    "files": new_docs,
+                }
+            )
 
         except HTTPException:
             raise

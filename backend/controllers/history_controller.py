@@ -51,7 +51,12 @@ class HistoryController:
                 status="completed",
             )
 
-            await db.transfer_history.insert_one(history.dict())
+            history_dict = history.dict()
+
+            # ✅ Convert UUID to string
+            history_dict["transfer_id"] = str(history_dict["transfer_id"])
+
+            await db.transfer_history.insert_one(history_dict)
 
             return {
                 "success": True,
