@@ -16,6 +16,7 @@ import { QRreducer } from "./slices/QrSlice";
 import { SessionReducer } from "./slices/ShareSessionSlice";
 import { FileReducer } from "./slices/FileSlices";
 import { share_FilesSlice } from "./slices/shareFiles";
+import { historyReducer } from "./slices/HistorySlice";
 
 export const store = configureStore({
   reducer: {
@@ -24,5 +25,6 @@ export const store = configureStore({
     session: SessionReducer,
     files: FileReducer,
     shareFiles: share_FilesSlice,
+    history: historyReducer,
   },
 });
