@@ -66,7 +66,6 @@ async def websocket_endpoint(websocket: WebSocket, qr_id: str):
     try:
         while True:
             data = await websocket.receive_json()
-            print("📩 Received:", data)
 
     except WebSocketDisconnect:
         ws_manager.disconnect(qr_id, websocket)

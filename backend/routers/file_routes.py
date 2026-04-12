@@ -19,6 +19,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 from utils.JWT import check_auth_middleware
+from controllers.history_controller import HistoryController
 
 from controllers.file_controller import (
     FileController,
@@ -103,7 +104,6 @@ async def complete_upload(
     payload: CompleteUploadRequest,
     session: Dict[str, Any] = Depends(verify_x_sharing_token),
 ):
-    """Complete file upload after S3 upload"""
     try:
         controller = FileController()
 
@@ -112,7 +112,6 @@ async def complete_upload(
             f"files={len(payload.files)}"
         )
 
-        # Convert Pydantic models to dicts
         files_as_dict = [f.model_dump() for f in payload.files]
 
         result = await controller.complete_upload(files_as_dict, session)
@@ -394,15 +393,24 @@ async def share_files(
     data: dict = Body(...),
     user=Depends(check_auth_middleware),
 ):
-
     qr_token = data.get("qr_token")
     file_ids = data.get("file_ids")
 
     if not qr_token or not file_ids:
         return {"success": False, "message": "Missing data"}
 
-    return await sharing_files.share_files_between_client(
+    # ✅ STEP 1: Share files
+    result = await sharing_files.share_files_between_client(
         qr_token=qr_token,
         selected_file_ids=file_ids,
         sender=user,
     )
+
+    session = result.get("session")
+    files = result.get("files")
+
+    # ✅ STEP 2: Create history
+    if session and files:
+        await HistoryController.create_History(session=session, files=files)
+
+    return result

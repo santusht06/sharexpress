@@ -112,8 +112,6 @@ class SharingController:
                 sender_name,
             ) = await SharingController.get_sender_info(req)
 
-            print("sender name = ", sender_name)
-
             (
                 receiver_type,
                 receiver_id,
