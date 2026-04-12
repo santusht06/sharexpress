@@ -34,6 +34,7 @@ from core.s3_config import (
 )
 from core.config import MINIO_BUCKET
 from core.permission_engine import PermissionEngine
+from models.history_model import UserMeta, FileMeta, TransferHistory
 
 
 logger = logging.getLogger(__name__)
@@ -1111,15 +1112,3 @@ class sharing_files:
         except Exception as e:
             print(e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
-
-    @staticmethod
-    async def create_history_logs(session):
-        try:
-            session
-
-        except HTTPException:
-            raise
-
-        except Exception as e:
-            print(e)
-            raise HTTPException(status_code=400, detail="INTERNAL SERVER ERROR")
