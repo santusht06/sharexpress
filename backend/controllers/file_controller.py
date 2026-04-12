@@ -34,6 +34,7 @@ from core.s3_config import (
 )
 from core.config import MINIO_BUCKET
 from core.permission_engine import PermissionEngine
+from models.history_model import UserMeta, FileMeta, TransferHistory
 
 
 logger = logging.getLogger(__name__)
@@ -1112,14 +1113,64 @@ class sharing_files:
             print(e)
             raise HTTPException(status_code=500, detail="INTERNAL SERVER ERROR")
 
+
+class HistoryController:
     @staticmethod
-    async def create_history_logs(session):
+    async def create_History(session: dict, files: list):
         try:
-            session
+            db = get_db()
+
+            if not session:
+                raise HTTPException(status_code=400, detail="Session not found")
+
+            sender = UserMeta(
+                user_id=session.get("sender_ID"),
+                name=session.get("sender_name"),
+                user_type=session.get("sender_type"),
+            )
+
+            receiver = UserMeta(
+                user_id=session.get("receiver_ID"),
+                name=session.get("reciever_name"),
+                user_type=session.get("receiver_type"),
+            )
+
+            file_meta_list = []
+            total_size = 0
+
+            for f in files:
+                file_meta = FileMeta(
+                    file_id=f.get("file_id"),
+                    filename=f.get("filename"),
+                    size=f.get("size"),
+                    mime_type=f.get("mime_type"),
+                )
+                file_meta_list.append(file_meta)
+                total_size += f.get("size", 0)
+
+            history = TransferHistory(
+                sender=sender,
+                receiver=receiver,
+                direction="sender_to_receiver",
+                files=file_meta_list,
+                total_files=len(file_meta_list),
+                total_size=total_size,
+                sharing_session_id=session.get("sharing_session_ID"),
+                completed_at=datetime.utcnow(),
+                status="completed",
+            )
+
+            await db.transfer_history.insert_one(history.dict())
+
+            return {
+                "success": True,
+                "transfer_id": str(history.transfer_id),
+                "total_files": history.total_files,
+            }
 
         except HTTPException:
             raise
 
         except Exception as e:
-            print(e)
-            raise HTTPException(status_code=400, detail="INTERNAL SERVER ERROR")
+            print("History Error:", e)
+            raise HTTPException(status_code=500, detail="FAILED TO CREATE HISTORY")
