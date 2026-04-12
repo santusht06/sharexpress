@@ -19,6 +19,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 from utils.JWT import check_auth_middleware
+from controllers.history_controller import HistoryController
 
 from controllers.file_controller import (
     FileController,
@@ -112,10 +113,14 @@ async def complete_upload(
             f"files={len(payload.files)}"
         )
 
-        # Convert Pydantic models to dicts
+        # 📦 Convert files
         files_as_dict = [f.model_dump() for f in payload.files]
 
+        # ✅ STEP 1: Complete upload
         result = await controller.complete_upload(files_as_dict, session)
+
+        # ✅ STEP 2: Create history (🔥 HERE)
+        await HistoryController.create_History(session=session, files=files_as_dict)
 
         return JSONResponse(status_code=status.HTTP_201_CREATED, content=result)
 
