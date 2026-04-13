@@ -59,48 +59,81 @@ const History = () => {
         )}
 
         {/* LIST */}
-        <div className="flex flex-col gap-3 overflow-y-auto">
-          {histories.map((item) => (
-            <div
-              key={item.transfer_id}
-              className="border border-[#ffffff08] bg-[#111] rounded-lg p-4 flex flex-col gap-2"
-            >
-              {/* TOP ROW */}
-              <div className="flex items-center justify-between">
-                <p className="text-white text-sm">
-                  {item.sender?.name} → {item.receiver?.name}
-                </p>
+        <div className="flex flex-col gap-4 overflow-y-auto pr-1">
+          {histories
+            .slice()
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .map((item) => (
+              <div
+                key={item.transfer_id}
+                className="group relative border border-[#ffffff08] from-[#111] to-[#0c0c0c] rounded-xl p-4 flex flex-col gap-3 transition-all duration-200 ]"
+              >
+                {/* TOP */}
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col">
+                    <p className="text-white text-sm font-medium tracking-tight">
+                      {item.sender?.name}
+                      <span className="text-[#444] mx-1.5">→</span>
+                      <span className="text-[#aaa]">{item.receiver?.name}</span>
+                    </p>
 
-                <span className="text-[10px] text-[#444] font-mono">
-                  {formatDate(item.created_at)}
-                </span>
-              </div>
+                    <span className="text-[10px] text-[#333] mt-0.5">
+                      {item.direction === "sender_to_receiver"
+                        ? "Sent"
+                        : "Received"}
+                    </span>
+                  </div>
 
-              {/* FILE INFO */}
-              <div className="flex items-center justify-between text-xs text-[#444]">
-                <span>{item.total_files} files</span>
-                <span>{formatSize(item.total_size)}</span>
-              </div>
-
-              {/* FILE LIST (compact) */}
-              <div className="flex flex-wrap gap-2 mt-1">
-                {item.files?.slice(0, 4).map((file) => (
-                  <span
-                    key={file.file_id}
-                    className="text-[10px] px-2 py-1 bg-[#0a0a0a] border border-[#ffffff08] rounded-md text-[#777]"
-                  >
-                    {file.filename}
+                  <span className="text-[10px] text-[#333] font-mono">
+                    {formatDate(item.created_at)}
                   </span>
-                ))}
+                </div>
 
-                {item.files?.length > 4 && (
-                  <span className="text-[10px] text-[#333]">
-                    +{item.files.length - 4} more
-                  </span>
-                )}
+                {/* META */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-[11px] text-[#444]">
+                    <span className="px-2 py-[2px] bg-[#0a0a0a] border border-[#ffffff08] rounded-md">
+                      {item.total_files} file{item.total_files > 1 && "s"}
+                    </span>
+
+                    <span className="px-2 py-[2px] bg-[#0a0a0a] border border-[#ffffff08] rounded-md">
+                      {formatSize(item.total_size)}
+                    </span>
+                  </div>
+
+                  {/* STATUS DOT */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400/70" />
+                    <span className="text-[10px] text-green-400/60">
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* FILES */}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {item.files?.slice(0, 5).map((file) => (
+                    <div
+                      key={file.file_id}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0a0a0a] border border-[#ffffff08] text-[10px] text-[#777] hover:text-white transition"
+                    >
+                      {/* FILE ICON */}
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#444]" />
+                      {file.filename}
+                    </div>
+                  ))}
+
+                  {item.files?.length > 5 && (
+                    <div className="text-[10px] text-[#333] flex items-center">
+                      +{item.files.length - 5} more
+                    </div>
+                  )}
+                </div>
+
+                {/* HOVER GLOW */}
+                <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition pointer-events-none bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.04),transparent_60%)]" />
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>

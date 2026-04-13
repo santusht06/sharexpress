@@ -75,7 +75,7 @@ const historySlice = createSlice({
 
     builder.addCase(fetchSessionHistory.fulfilled, (state, action) => {
       state.session_loading = false;
-      state.session_history = action.payload?.history || null; // ✅ FIX
+      state.session_history = action.payload?.history || null;
     });
     builder.addCase(fetchSessionHistory.rejected, (state, action) => {
       state.session_loading = false;
