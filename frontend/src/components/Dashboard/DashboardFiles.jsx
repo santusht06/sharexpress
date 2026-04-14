@@ -12,14 +12,26 @@ import { toast } from "react-toastify";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import { clearUrlCache, removeCachedUrl } from "../../helpers/urlCache";
 import FileCardSkeleton from "./FileCardSkeleton";
+import SortDropdown from "./SortDropdown";
 
 const DashboardFiles = () => {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortBy, setSortBy] = useState("date_desc");
   const dispatch = useDispatch();
   const { userFiles = [], loadingFiles } = useSelector((state) => state.files);
 
   const [view, setView] = useState("list");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400); // 400ms sweet spot
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     dispatch(fetchUserFiles());
@@ -56,12 +68,77 @@ const DashboardFiles = () => {
     }
   };
 
+  const processedFiles = React.useMemo(() => {
+    let files = [...userFiles];
+
+    // 🔍 SEARCH FILTER
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
+      files = files.filter((f) => f.filename?.toLowerCase().includes(q));
+    }
+
+    // 🔃 SORTING
+    switch (sortBy) {
+      case "default":
+        return files;
+
+      case "name_asc":
+        return files.sort((a, b) => a.filename.localeCompare(b.filename));
+
+      case "name_desc":
+        return files.sort((a, b) => b.filename.localeCompare(a.filename));
+
+      case "size_asc":
+        return files.sort((a, b) => a.size - b.size);
+
+      case "size_desc":
+        return files.sort((a, b) => b.size - a.size);
+
+      case "date_asc":
+        return files.sort(
+          (a, b) => new Date(a.created_at) - new Date(b.created_at),
+        );
+
+      case "date_desc":
+      default:
+        return files.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at),
+        );
+    }
+  }, [userFiles, sortBy, debouncedSearch]);
+
   return (
     <div className="ml-[260px] flex-1 p-3">
       <div className="min-w-full min-h-full bg-[#0d0d0d] rounded-xl border border-[#ffffff10] p-6 flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-white text-lg font-medium">Your Files</h1>
           <div className="flex items-center gap-3">
+            {!loadingFiles && userFiles.length > 0 && (
+              <div className="flex items-center gap-3">
+                {/* SEARCH */}
+                <div className="flex items-center px-3 py-1.5 bg-[#161616] border border-[#ffffff08] rounded-md focus-within:border-[#ffffff30] transition-all duration-200 ease-in-out ">
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search files..."
+                    className="bg-transparent outline-none text-[11px] text-white placeholder:text-[#444] w-36  "
+                  />
+
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="text-[10px] text-[#555] hover:text-white ml-2"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* SORT */}
+                <SortDropdown value={sortBy} onChange={setSortBy} />
+              </div>
+            )}
             {userFiles.length > 0 && (
               <div className="flex bg-[#1a1a1a] border border-[#ffffff10] rounded-lg overflow-hidden">
                 <button
@@ -78,6 +155,7 @@ const DashboardFiles = () => {
                 </button>
               </div>
             )}
+
             {userFiles.length > 0 && (
               <button
                 onClick={() => setDeleteModalOpen(true)}
@@ -112,7 +190,7 @@ const DashboardFiles = () => {
                 : "flex flex-col gap-3"
             }
           >
-            {userFiles.map((file) => (
+            {processedFiles.map((file) => (
               <FileCard
                 key={file.file_id}
                 file={file}
