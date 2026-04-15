@@ -30,3 +30,11 @@ async def get_history(
         page=page,
         limit=limit,
     )
+
+
+@router.get("/{transfer_id}")
+async def get_one_history(
+    transfer_id: str,
+    user: dict = Depends(check_auth_middleware),
+):
+    return await HistoryController.get_one_history(transfer_id, user)
