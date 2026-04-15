@@ -9,6 +9,7 @@ class HistoryController:
     @staticmethod
     async def create_History(session: dict, files: list):
         try:
+            print(files)
             db = get_db()
 
             if not session:
@@ -127,3 +128,31 @@ class HistoryController:
         except Exception as e:
             print("GET HISTORY ERROR:", e)
             raise HTTPException(status_code=500, detail="FAILED TO FETCH HISTORY")
+
+    @staticmethod
+    async def get_one_history(transfer_id: str, user: dict):
+        try:
+            db = get_db()
+
+            # 🔍 Find history
+            history = await db.transfer_history.find_one({"transfer_id": transfer_id})
+
+            if not history:
+                raise HTTPException(status_code=404, detail="History not found")
+
+            if (
+                history["sender"]["user_id"] != user["user_id"]
+                and history["receiver"]["user_id"] != user["user_id"]
+            ):
+                raise HTTPException(status_code=403, detail="Unauthorized")
+
+            history["_id"] = str(history["_id"])
+
+            return {"success": True, "data": history}
+
+        except HTTPException:
+            raise
+
+        except Exception as e:
+            print("Get one history error:", e)
+            raise HTTPException(status_code=500, detail="Failed to fetch history")
