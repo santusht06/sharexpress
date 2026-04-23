@@ -62,13 +62,18 @@ s3_public = boto3.client(
 print(MINIO_ACCESS_KEY, MINIO_BUCKET, MINIO_ENDPOINT_PUBLIC, MINIO_SECRET_KEY)
 
 
-def generate_presigned_upload_url(object_name: str):
+def generate_presigned_upload_url(object_name: str, content_type: str = None):
+    params = {
+        "Bucket": MINIO_BUCKET,
+        "Key": object_name,
+    }
+
+    if content_type:
+        params["ContentType"] = content_type
+
     url = s3_public.generate_presigned_url(
         ClientMethod="put_object",
-        Params={
-            "Bucket": MINIO_BUCKET,
-            "Key": object_name,
-        },
+        Params=params,
         ExpiresIn=600,
     )
     return url

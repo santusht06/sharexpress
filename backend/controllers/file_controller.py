@@ -550,7 +550,10 @@ class FileController:
 
                 loop = asyncio.get_event_loop()
                 url = await loop.run_in_executor(
-                    None, generate_presigned_upload_url, object_key
+                    None,
+                    generate_presigned_upload_url,
+                    object_key,
+                    file_data.content_type,
                 )
 
                 return {

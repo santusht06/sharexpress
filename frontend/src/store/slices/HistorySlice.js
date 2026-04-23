@@ -27,6 +27,20 @@ export const fetchSessionHistory = createAsyncThunk(
   },
 );
 
+export const fetchHistoryByTransferID = createAsyncThunk(
+  "history/transfer",
+  async (transfer_ID, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`/history/${transfer_ID}`);
+      return res.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || "FAILED TO FETCH TRANSFER HISTORY",
+      );
+    }
+  },
+);
+
 const historySlice = createSlice({
   name: "history",
 
@@ -39,6 +53,10 @@ const historySlice = createSlice({
     session_loading: false,
     session_error: null,
     session_history: null,
+
+    transfer_loading: false,
+    transfer_error: null,
+    transfer_history: null,
   },
 
   reducers: {
@@ -80,6 +98,22 @@ const historySlice = createSlice({
     builder.addCase(fetchSessionHistory.rejected, (state, action) => {
       state.session_loading = false;
       state.session_error = action.payload;
+    });
+
+    builder.addCase(fetchHistoryByTransferID.pending, (state) => {
+      state.transfer_loading = true;
+      state.transfer_error = null;
+      state.transfer_history = null;
+    });
+
+    builder.addCase(fetchHistoryByTransferID.fulfilled, (state, action) => {
+      state.transfer_loading = false;
+      state.transfer_history = action.payload?.data || null;
+    });
+
+    builder.addCase(fetchHistoryByTransferID.rejected, (state, action) => {
+      state.transfer_loading = false;
+      state.transfer_error = action.payload;
     });
   },
 });
