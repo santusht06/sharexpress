@@ -3,9 +3,21 @@ from fastapi import HTTPException
 
 from models.history_model import UserMeta, FileMeta, TransferHistory
 from datetime import datetime
+from fastapi.responses import StreamingResponse
+import zipfile
+import io
+from core.s3_config import s3_internal
+from core.config import MINIO_BUCKET
 
 
 class HistoryController:
+    async def _get_storage_key(self, file_id):
+        from core.database import get_db
+
+        db = get_db()
+        file_doc = await self.db.files.find_one({"file_id": file_id})
+        return file_doc["storage_key"]
+
     @staticmethod
     async def create_History(session: dict, files: list):
         try:
@@ -156,3 +168,60 @@ class HistoryController:
         except Exception as e:
             print("Get one history error:", e)
             raise HTTPException(status_code=500, detail="Failed to fetch history")
+
+    @staticmethod
+    async def download_transfer_zip(transfer_id: str, user: dict):
+        db = get_db()
+
+        history = await db.transfer_history.find_one({"transfer_id": transfer_id})
+        if not history:
+            raise HTTPException(status_code=404, detail="Transfer not found")
+
+        if (
+            history["sender"]["user_id"] != user["user_id"]
+            and history["receiver"]["user_id"] != user["user_id"]
+        ):
+            raise HTTPException(status_code=403, detail="Unauthorized")
+
+        files = history.get("files", [])
+
+        if not files:
+            raise HTTPException(status_code=404, detail="No files in transfer")
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for file in files:
+                file_doc = await db.files.find_one(
+                    {"file_id": file["file_id"]},
+                    {"storage_key": 1, "_id": 0},
+                )
+
+                if not file_doc:
+                    continue
+
+                storage_key = file_doc["storage_key"]
+
+                try:
+                    obj = s3_internal.get_object(
+                        Bucket=MINIO_BUCKET,
+                        Key=storage_key,
+                    )
+
+                    data = obj["Body"].read()
+
+                    zip_file.writestr(file["filename"], data)
+
+                except Exception as e:
+                    print("File fetch failed:", file["file_id"], e)
+                    continue
+
+        zip_buffer.seek(0)
+
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="sharexpress_{transfer_id[:8]}.zip"'
+            },
+        )

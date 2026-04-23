@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchHistory } from "../../store/slices/historySlice";
-
-/* ─── Helpers ───────────────────────────────────────── */
+import HistoryModal from "./HistoryModal"; // ✅ add this
 
 const formatDate = (date) => new Date(date).toLocaleString();
 
@@ -12,8 +11,6 @@ const formatSize = (size) => {
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
-
-/* ─── Skeleton ─────────────────────────────────────── */
 
 const HistorySkeleton = () => (
   <div className="flex flex-col gap-4">
@@ -35,11 +32,13 @@ const HistorySkeleton = () => (
   </div>
 );
 
-/* ─── Card (Memoized) ───────────────────────────────── */
-
-const HistoryCard = React.memo(({ item }) => {
+/* 🔥 UPDATED CARD */
+const HistoryCard = React.memo(({ item, onClick }) => {
   return (
-    <div className="border border-[#ffffff08] hover:border-[#ffffff30] transition-all duration-200 ease-in-out bg-[#0f0f0f] rounded-xl px-4 py-3 flex flex-col gap-3">
+    <div
+      onClick={() => onClick(item.transfer_id)}
+      className="cursor-pointer border border-[#ffffff08] hover:border-[#ffffff20] bg-[#0f0f0f] rounded-xl px-4 py-3 flex flex-col gap-3"
+    >
       {/* TOP */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col leading-tight">
@@ -98,17 +97,17 @@ const HistoryCard = React.memo(({ item }) => {
   );
 });
 
-/* ─── Main Component ───────────────────────────────── */
-
+/* 🔥 MAIN COMPONENT */
 const History = () => {
   const dispatch = useDispatch();
   const { histories, loading, error } = useSelector((state) => state.history);
+
+  const [selectedTransferId, setSelectedTransferId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchHistory());
   }, [dispatch]);
 
-  /* ✅ Memoized sorting */
   const sortedHistories = useMemo(() => {
     return [...histories].sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at),
@@ -116,22 +115,18 @@ const History = () => {
   }, [histories]);
 
   return (
-    <div className="ml-[260px] flex-1 p-3  ">
+    <div className="ml-[260px] flex-1 p-3">
       <div className="w-full h-full bg-[#0d0d0d] rounded-xl border border-[#ffffff10] p-6 flex flex-col">
-        {/* HEADER */}
         <h1 className="text-white text-sm font-medium tracking-tight mb-4">
           History
         </h1>
 
-        {/* ERROR */}
         {error && (
           <p className="text-red-400 text-xs mb-2 font-mono">{error}</p>
         )}
 
-        {/* LOADING */}
         {loading && <HistorySkeleton />}
 
-        {/* EMPTY */}
         {!loading && sortedHistories.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-2">
             <p className="text-[#444] text-sm">No history yet</p>
@@ -141,15 +136,24 @@ const History = () => {
           </div>
         )}
 
-        {/* LIST */}
         {!loading && sortedHistories.length > 0 && (
           <div className="flex flex-col gap-3 overflow-y-auto pr-1">
             {sortedHistories.map((item) => (
-              <HistoryCard key={item.transfer_id} item={item} />
+              <HistoryCard
+                key={item.transfer_id}
+                item={item}
+                onClick={setSelectedTransferId} // ✅ trigger modal
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* 🔥 MODAL */}
+      <HistoryModal
+        transferId={selectedTransferId}
+        onClose={() => setSelectedTransferId(null)}
+      />
     </div>
   );
 };
