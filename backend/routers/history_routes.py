@@ -38,6 +38,3 @@ async def get_one_history(
     user: dict = Depends(check_auth_middleware),
 ):
     return await HistoryController.get_one_history(transfer_id, user)
-
-
-# DAY 3 STARTS FROM HERE
