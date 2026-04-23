@@ -213,7 +213,6 @@ class SharingController:
                     "receiver_name": reciever_name,
                 },
             )
-            print("🔥 WS EVENT SENT TO:", qr_id)
 
             return {
                 "success": True,
