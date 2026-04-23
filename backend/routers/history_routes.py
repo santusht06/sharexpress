@@ -38,3 +38,10 @@ async def get_one_history(
     user: dict = Depends(check_auth_middleware),
 ):
     return await HistoryController.get_one_history(transfer_id, user)
+
+
+@router.get("/{transfer_id}/download")
+async def download_transfer_zip(
+    transfer_id: str, user: dict = Depends(check_auth_middleware)
+):
+    return await HistoryController.download_transfer_zip(transfer_id, user)
