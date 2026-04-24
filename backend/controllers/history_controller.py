@@ -48,6 +48,7 @@ class HistoryController:
                     filename=f.get("filename"),
                     size=f.get("size"),
                     mime_type=f.get("mime_type"),
+                    storage_key=f.get("storage_key"),
                 )
                 file_meta_list.append(file_meta)
                 total_size += f.get("size", 0)
@@ -171,37 +172,71 @@ class HistoryController:
 
     @staticmethod
     async def download_transfer_zip(transfer_id: str, user: dict):
+        print("\n\n🚀 DOWNLOAD STARTED")
+        print("TRANSFER ID:", transfer_id)
+        print("USER:", user.get("user_id"))
+
         db = get_db()
 
+        # ─────────────────────────────
+        # STEP 1: FETCH HISTORY
+        # ─────────────────────────────
         history = await db.transfer_history.find_one({"transfer_id": transfer_id})
+
+        print("\n📦 HISTORY FETCHED:", history)
+
         if not history:
             raise HTTPException(status_code=404, detail="Transfer not found")
 
+        print("FILES COUNT:", len(history.get("files", [])))
+
+        # ─────────────────────────────
+        # STEP 2: AUTH CHECK
+        # ─────────────────────────────
         if (
             history["sender"]["user_id"] != user["user_id"]
             and history["receiver"]["user_id"] != user["user_id"]
         ):
+            print("❌ UNAUTHORIZED ACCESS")
             raise HTTPException(status_code=403, detail="Unauthorized")
+
+        print("✅ AUTHORIZED")
 
         files = history.get("files", [])
 
         if not files:
+            print("❌ NO FILES FOUND")
             raise HTTPException(status_code=404, detail="No files in transfer")
 
+        # ─────────────────────────────
+        # STEP 3: CREATE ZIP BUFFER
+        # ─────────────────────────────
         zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for file in files:
+            for i, file in enumerate(files):
+                print(f"\n📄 FILE {i + 1}/{len(files)}")
+                print("FILE ID:", file["file_id"])
+                print("FILENAME:", file["filename"])
+
+                # ─────────────────────────────
+                # STEP 4: FETCH STORAGE KEY
+                # ─────────────────────────────
                 file_doc = await db.files.find_one(
                     {"file_id": file["file_id"]},
                     {"storage_key": 1, "_id": 0},
                 )
 
                 if not file_doc:
+                    print("❌ FILE DOC NOT FOUND")
                     continue
 
                 storage_key = file_doc["storage_key"]
+                print("🗂 STORAGE KEY:", storage_key)
 
+                # ─────────────────────────────
+                # STEP 5: FETCH FROM MINIO
+                # ─────────────────────────────
                 try:
                     obj = s3_internal.get_object(
                         Bucket=MINIO_BUCKET,
@@ -210,18 +245,43 @@ class HistoryController:
 
                     data = obj["Body"].read()
 
+                    print("📥 DOWNLOADED FROM MINIO:", len(data), "bytes")
+
+                    if not data:
+                        print("⚠️ EMPTY FILE DATA")
+
+                    # ─────────────────────────────
+                    # STEP 6: ADD TO ZIP
+                    # ─────────────────────────────
                     zip_file.writestr(file["filename"], data)
+                    print("✅ ADDED TO ZIP")
 
                 except Exception as e:
-                    print("File fetch failed:", file["file_id"], e)
+                    print("❌ MINIO FETCH FAILED:", e)
                     continue
 
+        # ─────────────────────────────
+        # STEP 7: FINAL ZIP CHECK
+        # ─────────────────────────────
         zip_buffer.seek(0)
+        zip_bytes = zip_buffer.getvalue()
 
+        print("\n🧪 ZIP DEBUG")
+        print("ZIP SIZE:", len(zip_bytes))
+
+        if len(zip_bytes) < 100:
+            print("⚠️ ZIP TOO SMALL → likely corrupted")
+
+        print("🚀 SENDING RESPONSE\n\n")
+
+        # ─────────────────────────────
+        # STEP 8: RESPONSE
+        # ─────────────────────────────
         return StreamingResponse(
-            zip_buffer,
+            iter([zip_bytes]),
             media_type="application/zip",
             headers={
-                "Content-Disposition": f'attachment; filename="sharexpress_{transfer_id[:8]}.zip"'
+                "Content-Disposition": f'attachment; filename="sharexpress_{transfer_id[:8]}.zip"',
+                "Content-Length": str(len(zip_bytes)),
             },
         )

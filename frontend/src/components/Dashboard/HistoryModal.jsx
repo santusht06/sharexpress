@@ -24,8 +24,6 @@ const ModalSkeleton = () => (
   </div>
 );
 
-/* ─── Component ───────────────── */
-
 const HistoryModal = ({ transferId, onClose }) => {
   const dispatch = useDispatch();
 
@@ -44,7 +42,7 @@ const HistoryModal = ({ transferId, onClose }) => {
   const handleDownloadZip = async () => {
     try {
       const res = await fetch(
-        `/history/${transfer_history.transfer_id}/download`,
+        `http://localhost:8000/history/${transfer_history.transfer_id}/download`,
         {
           method: "GET",
           headers: {
