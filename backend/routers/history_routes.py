@@ -44,4 +44,5 @@ async def get_one_history(
 async def download_transfer_zip(
     transfer_id: str, user: dict = Depends(check_auth_middleware)
 ):
+    print("🔥 ROUTE HIT:", transfer_id)
     return await HistoryController.download_transfer_zip(transfer_id, user)

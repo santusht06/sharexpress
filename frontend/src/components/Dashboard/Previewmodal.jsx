@@ -101,7 +101,7 @@ const PreviewModal = ({ file, url, type, onClose, onDownload }) => {
               </button>
             )}
             <button
-              onClick={() => onDownload(file)}
+              onClick={() => onDownload({ ...file, download_url: url })}
               className="text-[#8a8a8a] hover:text-white transition"
               title="Download"
             >
