@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchHistoryByTransferID } from "../../store/slices/historySlice";
 
@@ -25,6 +25,8 @@ const ModalSkeleton = () => (
 );
 
 const HistoryModal = ({ transferId, onClose }) => {
+  const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const dispatch = useDispatch();
 
   const { transfer_loading, transfer_history } = useSelector(
@@ -41,13 +43,12 @@ const HistoryModal = ({ transferId, onClose }) => {
 
   const handleDownloadZip = async () => {
     try {
+      setDownloading(true);
       const res = await fetch(
         `http://localhost:8000/history/${transfer_history.transfer_id}/download`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("user")}`,
-          },
+          credentials: "include",
         },
       );
 
@@ -65,13 +66,17 @@ const HistoryModal = ({ transferId, onClose }) => {
 
       a.remove();
       window.URL.revokeObjectURL(url);
+      setDownloading(false); // ← add this
+      setDownloaded(true);
+      setTimeout(() => setDownloaded(false), 9000);
     } catch (err) {
       console.error(err);
+      setDownloading(false); // ← add
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center px-4">
       <div className="w-full max-w-2xl max-h-[85vh] bg-[#0d0d0d] border border-[#ffffff10] rounded-xl flex flex-col overflow-hidden">
         {/* HEADER */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#ffffff08]">
@@ -79,11 +84,6 @@ const HistoryModal = ({ transferId, onClose }) => {
             <h2 className="text-white text-sm font-medium tracking-tight">
               Transfer Details
             </h2>
-            {transfer_history && (
-              <span className="text-[10px] text-[#444] font-mono mt-1">
-                {transfer_history.transfer_id}
-              </span>
-            )}
           </div>
 
           <button
@@ -132,9 +132,18 @@ const HistoryModal = ({ transferId, onClose }) => {
                 {/* DOWNLOAD ALL */}
                 <button
                   onClick={handleDownloadZip}
-                  className="text-[11px] px-3 py-1 bg-white text-black rounded-md"
+                  disabled={downloading || downloaded}
+                  className={`text-[11px] px-3 py-1 rounded-md transition-colors duration-300 ${
+                    downloaded
+                      ? "bg-green-500 text-white"
+                      : "bg-white text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  }`}
                 >
-                  Download ZIP
+                  {downloading
+                    ? "Downloading..."
+                    : downloaded
+                      ? "Downloaded ✓"
+                      : "Download ZIP"}
                 </button>
               </div>
 
@@ -158,9 +167,17 @@ const HistoryModal = ({ transferId, onClose }) => {
 
                     {/* DOWNLOAD */}
                     <button
-                      onClick={() =>
-                        window.open(`/files/download/${file.file_id}`, "_blank")
-                      }
+                      onClick={async () => {
+                        const res = await fetch(
+                          `http://localhost:8000/files/download/${file.file_id}`,
+                          {
+                            credentials: "include",
+                          },
+                        );
+                        const data = await res.json();
+                        if (data.download_url)
+                          window.open(data.download_url, "_blank");
+                      }}
                       className="text-[10px] text-[#777] hover:text-white"
                     >
                       Download

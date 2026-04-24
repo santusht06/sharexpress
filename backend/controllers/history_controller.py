@@ -178,9 +178,6 @@ class HistoryController:
 
         db = get_db()
 
-        # ─────────────────────────────
-        # STEP 1: FETCH HISTORY
-        # ─────────────────────────────
         history = await db.transfer_history.find_one({"transfer_id": transfer_id})
 
         print("\n📦 HISTORY FETCHED:", history)
@@ -190,9 +187,6 @@ class HistoryController:
 
         print("FILES COUNT:", len(history.get("files", [])))
 
-        # ─────────────────────────────
-        # STEP 2: AUTH CHECK
-        # ─────────────────────────────
         if (
             history["sender"]["user_id"] != user["user_id"]
             and history["receiver"]["user_id"] != user["user_id"]
@@ -208,9 +202,6 @@ class HistoryController:
             print("❌ NO FILES FOUND")
             raise HTTPException(status_code=404, detail="No files in transfer")
 
-        # ─────────────────────────────
-        # STEP 3: CREATE ZIP BUFFER
-        # ─────────────────────────────
         zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
