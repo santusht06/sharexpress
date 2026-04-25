@@ -1,19 +1,25 @@
-# frontend/Dockerfile
+FROM python:3.11-slim
 
-# build stage
-FROM node:20 AS builder
+# Better Python behavior in containers
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
 COPY . .
-RUN npm run build
 
-# production stage
-FROM nginx:alpine
+EXPOSE 8000
 
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
