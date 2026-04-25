@@ -3,6 +3,11 @@ import { Download, Trash2, MoreVertical } from "lucide-react";
 import useInViewUrl, { getFileType } from "../../helpers/Useinviewurl";
 import PreviewThumbnail from "./Previewthumbnail";
 import PreviewModal from "./Previewmodal";
+import EditorRouter from "../Dashboard/editor/Editorrouter";
+
+import { Pencil } from "lucide-react";
+
+const EDITABLE_TYPES = ["pdf", "doc", "docx"];
 
 const formatSize = (size) => {
   if (!size) return "0 B";
@@ -12,6 +17,8 @@ const formatSize = (size) => {
 };
 
 const FileCard = memo(({ file, onDownload, onDelete, view }) => {
+  const [editOpen, setEditOpen] = useState(false);
+
   const type = getFileType(file?.filename);
   const { ref, url, loading, error, retry } = useInViewUrl(file);
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,6 +56,16 @@ const FileCard = memo(({ file, onDownload, onDelete, view }) => {
                   onDownload({ ...file, download_url: url });
                 }}
               />
+              {EDITABLE_TYPES.includes(type) && (
+                <Pencil
+                  size={18}
+                  className="text-white hover:scale-110 cursor-pointer transition"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditOpen(true);
+                  }}
+                />
+              )}
               <Trash2
                 size={18}
                 className="text-red-400 hover:scale-110 cursor-pointer transition"
@@ -128,6 +145,16 @@ const FileCard = memo(({ file, onDownload, onDelete, view }) => {
               onDownload({ ...file, download_url: url });
             }}
           />
+          {EDITABLE_TYPES.includes(type) && (
+            <Pencil
+              size={16}
+              className="text-[#8a8a8a] hover:text-white cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditOpen(true);
+              }}
+            />
+          )}
           <Trash2
             size={16}
             className="text-red-400 hover:text-red-300 cursor-pointer"
@@ -152,6 +179,10 @@ const FileCard = memo(({ file, onDownload, onDelete, view }) => {
           onClose={() => setModalOpen(false)}
           onDownload={onDownload}
         />
+      )}
+
+      {editOpen && (
+        <EditorRouter file={file} onClose={() => setEditOpen(false)} />
       )}
     </>
   );

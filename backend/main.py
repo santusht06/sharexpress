@@ -32,6 +32,7 @@ from routers.user_routes import router as User_router
 from routers.qr_routes import router as qr_router
 from routers.file_routes import router as file_router
 from routers.history_routes import router as history_router
+from routers.edit_routes import router as edit_router
 #  ENV FILE FUNCTION LOADS
 
 
@@ -99,6 +100,7 @@ app.include_router(qr_router)
 app.include_router(Sharing_session_router)
 app.include_router(file_router)
 app.include_router(history_router)
+app.include_router(edit_router)
 
 
 # HEALTH CHECKED API
