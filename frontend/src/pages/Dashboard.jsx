@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 //
 import React, { useState } from "react";
-import LOGOw from "../../../DOCUMENTS/logo.PNG";
+import LOGOw from "../assets/logo.png";
 import { useSelector } from "react-redux";
 import { IoMdMore } from "react-icons/io";
 import SettingsProfile from "../components/SettingsProfile";
