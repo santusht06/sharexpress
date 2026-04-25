@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 //
 import React from "react";
-import LOGOw from "../../../DOCUMENTS/logo.PNG";
+import LOGOw from "../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 
 const Footer = () => {

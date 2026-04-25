@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchHistoryByTransferID } from "../../store/slices/historySlice";
+import { fetchHistoryByTransferID } from "../../store/slices/HistorySlice";
 
 const formatDate = (date) => new Date(date).toLocaleString();
 

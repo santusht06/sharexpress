@@ -20,12 +20,13 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
 
   optimizeDeps: {
-    exclude: ["html-docx-js"],
+    include: ["html-docx-js"],
   },
 
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,
+      include: [/html-docx-js/, /node_modules/],
     },
   },
 });

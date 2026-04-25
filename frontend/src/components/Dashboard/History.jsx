@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchHistory } from "../../store/slices/historySlice";
+import { fetchHistory } from "../../store/slices/HistorySlice";
 import HistoryModal from "./HistoryModal"; // ✅ add this
 
 const formatDate = (date) => new Date(date).toLocaleString();

@@ -50,6 +50,7 @@ redis
 # Object Storage (S3 / MinIO)
 # =========================
 boto3
+botocore
 
 # =========================
 # File handling / MIME detection
@@ -58,9 +59,21 @@ python-multipart
 python-magic
 
 # =========================
+# DOCX editing
+# =========================
+python-docx
+
+# =========================
 # Utilities
 # =========================
 python-dateutil
 
-# RATE LIMITING
+# =========================
+# Rate Limiting
+# =========================
 slowapi
+
+# =========================
+# Session Middleware
+# =========================
+itsdangerous

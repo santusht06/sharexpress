@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 //
 import React, { useState, useRef, useEffect } from "react";
-import LOGOw from "../../../DOCUMENTS/logo.PNG";
+import LOGOw from "../assets/logo.png";
 import google from "../images/google.png";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
