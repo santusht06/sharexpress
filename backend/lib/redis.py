@@ -12,4 +12,8 @@
 #
 from redis import Redis
 
-Redis_client = Redis(host="localhost", port=6379, decode_responses=True)
+Redis_client = Redis(
+    host="redis",
+    port=6379,
+    decode_responses=True,
+)
