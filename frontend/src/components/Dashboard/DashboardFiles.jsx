@@ -14,6 +14,8 @@ import { clearUrlCache, removeCachedUrl } from "../../helpers/urlCache";
 import FileCardSkeleton from "./FileCardSkeleton";
 import SortDropdown from "./SortDropdown";
 
+import { API } from "../../api/api";
+
 const DashboardFiles = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -39,13 +41,12 @@ const DashboardFiles = () => {
 
   const handleDownload = (file) => {
     const url = file?.download_url;
+
+    console.log("FILE URL:", url);
     if (url) {
       window.open(url, "_blank");
     } else {
-      window.open(
-        `http://localhost:8000/files/download/${file.file_id}`,
-        "_blank",
-      );
+      window.open(`${API}files/download/${file.file_id}`, "_blank");
     }
   };
 

@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getCachedUrl, setCachedUrl } from "./urlCache";
+import { API } from "../api/api";
 
 const PREVIEWABLE_EXTS = ["png", "jpg", "jpeg", "webp", "pdf", "doc", "docx"];
 
@@ -27,7 +28,7 @@ export const getFileType = (filename = "") => {
 };
 
 const doFetch = (fileId, abortSignal, onSuccess, onError, onDone) => {
-  fetch(`http://localhost:8000/files/download/${fileId}`, {
+  fetch(`${API}files/download/${fileId}`, {
     credentials: "include",
     signal: abortSignal,
   })

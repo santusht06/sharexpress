@@ -175,8 +175,7 @@ class UserController:
     async def redirect_to_uri(request: Request):
         """Redirect user to Google OAuth consent screen"""
         try:
-            redirect_uri = request.url_for("google_callback")
-
+            redirect_uri = "https://api.sharexpress.in/auth/google/callback"
             return await oauth.google.authorize_redirect(
                 request,
                 redirect_uri,
