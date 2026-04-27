@@ -19,6 +19,7 @@ import WButton from "../components/WButton";
 import { useDispatch, useSelector } from "react-redux";
 import { getCurrentUser, sendOTP, verifyOTP } from "../store/slices/authSlice";
 import { toast } from "react-toastify";
+import { API } from "../api/api";
 
 const TRANSITION = {
   duration: 1,
@@ -93,7 +94,7 @@ const Signin = () => {
   };
 
   const handleGoogleSign = () => {
-    window.location.href = "http://localhost:8000/auth/google/login";
+    window.location.href = `${API}auth/google/login`;
   };
 
   const handleSendOTP = async () => {

@@ -33,6 +33,7 @@ from routers.qr_routes import router as qr_router
 from routers.file_routes import router as file_router
 from routers.history_routes import router as history_router
 from routers.edit_routes import router as edit_router
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 #  ENV FILE FUNCTION LOADS
 
 
@@ -60,6 +61,11 @@ app = FastAPI(
     # lifespan=lifespan,
 )
 
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["api.sharexpress.in", "*.sharexpress.in", "*"],
+)
 
 app.add_middleware(
     SessionMiddleware,

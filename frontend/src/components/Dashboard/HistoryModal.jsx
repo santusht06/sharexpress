@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchHistoryByTransferID } from "../../store/slices/HistorySlice";
+import { API } from "../../api/api";
 
 const formatDate = (date) => new Date(date).toLocaleString();
 
@@ -45,7 +46,7 @@ const HistoryModal = ({ transferId, onClose }) => {
     try {
       setDownloading(true);
       const res = await fetch(
-        `http://localhost:8000/history/${transfer_history.transfer_id}/download`,
+        `${API}history/${transfer_history.transfer_id}/download`,
         {
           method: "GET",
           credentials: "include",
@@ -169,7 +170,7 @@ const HistoryModal = ({ transferId, onClose }) => {
                     <button
                       onClick={async () => {
                         const res = await fetch(
-                          `http://localhost:8000/files/download/${file.file_id}`,
+                          `${API}files/download/${file.file_id}`,
                           {
                             credentials: "include",
                           },
