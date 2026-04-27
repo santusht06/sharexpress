@@ -46,8 +46,10 @@ def GenerateToken(user_id: str, response: Response) -> bool:
             value=token,
             httponly=True,
             secure=False,
-            samesite="lax",
+            samesite="none",
+            domain=".sharexpress.in",
             max_age=JWT_EXPIRES * 24 * 60 * 60,
+            path="/",
         )
 
         return True
