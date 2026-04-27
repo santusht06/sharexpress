@@ -22,8 +22,7 @@ from models.sharing_session_creation_model import Status
 from core.config import PORJECT_ENVIRONMET
 
 
-is_prod = (PORJECT_ENVIRONMET == "PRODUCTION",)
-
+is_prod = PORJECT_ENVIRONMET == "PRODUCTION"
 
 db = get_db()
 
@@ -192,8 +191,9 @@ def set_sharing_cookie(sharing_token: str, response: Response) -> None:
         key="x-sharing-token",
         value=token,
         httponly=True,
-        secure=False,  # True in prod
-        samesite="lax",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
+        domain=".sharexpress.in" if is_prod else None,
         max_age=30 * 60,
         path="/",
     )

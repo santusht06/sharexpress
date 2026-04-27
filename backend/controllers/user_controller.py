@@ -27,7 +27,10 @@ from models.user_profiles import updateUser
 from models.user_model import email
 from typing import Optional
 import logging
-from core.config import FRONTEND_URI
+from core.config import FRONTEND_URI, PORJECT_ENVIRONMET
+
+
+is_prod = PORJECT_ENVIRONMET == "PRODUCTION"
 
 logger = logger = logging.getLogger(__name__)
 
@@ -318,9 +321,8 @@ class UserController:
 
             response.delete_cookie(
                 key="user",
-                httponly=True,
-                samesite="lax",
-                secure=False,
+                domain=".sharexpress.in" if is_prod else None,
+                path="/",
             )
 
             return {"message": "Logged out successfully", "success": True}
