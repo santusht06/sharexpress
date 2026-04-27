@@ -372,7 +372,7 @@ class UserController:
             return {
                 "name": user["name"],
                 "email": user["email"],
-                "picture": user["picture"],
+                "picture": user["picture"] if user["picture"] else None,
                 "user_id": user["user_id"],
                 "QR_TOKEN": QR_TOKEN["qr_token"],
             }
