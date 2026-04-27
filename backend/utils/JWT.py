@@ -19,6 +19,10 @@ from utils.user_repo import get_user_by_id
 from core.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRES
 from core.database import get_db
 from models.sharing_session_creation_model import Status
+from core.config import PORJECT_ENVIRONMET
+
+
+is_prod = (PORJECT_ENVIRONMET == "PRODUCTION",)
 
 
 db = get_db()
@@ -45,9 +49,9 @@ def GenerateToken(user_id: str, response: Response) -> bool:
             key="user",
             value=token,
             httponly=True,
-            secure=False,
-            samesite="none",
-            domain=".sharexpress.in",
+            secure=is_prod,
+            samesite="none" if is_prod else "lax",
+            domain=".sharexpress.in" if is_prod else None,
             max_age=JWT_EXPIRES * 24 * 60 * 60,
             path="/",
         )
