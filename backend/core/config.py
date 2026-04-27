@@ -66,3 +66,9 @@ MINIO_REGION = os.getenv("MINIO_REGION", "us-east-1")
 # FRONTEND CONFIG
 
 FRONTEND_URI = os.getenv("FRONTEND_URI")
+
+
+# REDIS CONFIG
+
+REDIS_HOST = os.getenv("REDIS_HOST", None)
+REDIS_PORT = os.getenv("REDIS_PORT", None)
