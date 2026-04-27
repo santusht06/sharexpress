@@ -320,8 +320,11 @@ class UserController:
 
             response.delete_cookie(
                 key="user",
-                domain=".sharexpress.in" if is_prod else None,
+                domain=".sharexpress.in",
                 path="/",
+                secure=True,
+                httponly=True,
+                samesite="none",
             )
 
             return {"message": "Logged out successfully", "success": True}
